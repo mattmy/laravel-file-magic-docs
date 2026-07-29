@@ -44,7 +44,11 @@ $collection = FileMagic::find(collect([
 
 Array 與 Collection 必須是一維結構，每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。無效元素會拋出 `InvalidFileTarget`，不會被靜默移除。
 
-`one()` 會回傳第一個符合的 `StoredFile` 或 `null`；`get()` 會回傳 `Illuminate\Support\Collection<int, StoredFile>`，可使用完整的 Laravel Collection API，同時不會暴露 Eloquent query builder。
+合法但找不到紀錄的 ID 或 UUID 會從結果中省略，因此 `one()` 會回傳第一個符合的
+`StoredFile` 或 `null`；`download()`、`contents()` 等必須取得檔案的操作在沒有任何
+結果時則會拋出 `FileNotFound`。`get()` 會回傳
+`Illuminate\Support\Collection<int, StoredFile>`，可使用完整的 Laravel Collection
+API，同時不會暴露 Eloquent query builder。
 
 
 ## 取得 URL
@@ -87,7 +91,9 @@ $urls = FileMagic::find([
 檢查實體檔案是否存在：
 
 ```php
-if (FileMagic::find($target)->exists()) {
+$file = FileMagic::find($target);
+
+if ($file->exists()) {
     // 實體檔案存在。
 }
 ```

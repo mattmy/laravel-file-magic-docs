@@ -56,6 +56,9 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
+傳入 `RemoteFileOptions` 時，該物件會取代這次操作的 `remote` 全域預設值，不會與
+設定檔合併。請在物件中完整列出該請求需要的非預設 host、port 與 timeout。
+
 | Option | 型別 | 預設值 | 行為 |
 | --- | --- | --- | --- |
 | `verifyTls` | `bool` | `true` | 驗證 HTTPS certificate、hostname 與 certificate chain |
@@ -137,6 +140,9 @@ $file = FileMagic::fromUrl(
 
 允許後會使用實際 HTML MIME 與 `.html` 儲存。HTML 從應用程式同源顯示時可能執行
 script；除非應用程式會隔離並清理內容，否則應保持 private 並以 attachment 下載。
+`allowHtml: true` 只會略過遠端 HTML 專用的拒絕規則；一般的
+`allowed_mime_types`、`blocked_mime_types`、`allowMimeTypes()` 與
+`blockMimeTypes()` 規則仍然有效。
 
 ### 網址下載的安全性與效能
 
