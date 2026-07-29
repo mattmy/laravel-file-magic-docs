@@ -43,7 +43,7 @@ All exceptions extend `FileMagicException`.
 | `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` |
 | `FileTooLarge` | Byte limit exceeded |
 | `DisallowedMimeType` | MIME type rejected |
-| `FileWriteFailed` | Storage or collision failure |
+| `FileWriteFailed` | Storage write, collision, overwrite backup, or deletion failure |
 | `FileRecordFailed` | Database persistence failure |
 | `FileRecoveryFailed` | An overwrite failed and the original object could not be restored |
 | `PartialFileDeletion` | Only confirmed missing objects and their records were deleted |

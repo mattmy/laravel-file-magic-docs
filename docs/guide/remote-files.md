@@ -57,6 +57,10 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
+Passing `RemoteFileOptions` replaces the configured `remote` defaults for that
+operation; the values are not merged. Include every non-default host, port, and
+timeout required by the request.
+
 | Option | Type | Default | Behavior |
 | --- | --- | --- | --- |
 | `verifyTls` | `bool` | `true` | Verifies the HTTPS certificate, hostname, and chain |
@@ -143,6 +147,9 @@ $file = FileMagic::fromUrl(
 Allowed HTML is stored with its detected HTML MIME type and `.html` extension. HTML
 can execute script when served from an application origin, so keep it private and
 download it as an attachment unless the application sanitizes and isolates it.
+`allowHtml: true` only removes the remote HTML-specific rejection; the normal
+`allowed_mime_types`, `blocked_mime_types`, `allowMimeTypes()`, and
+`blockMimeTypes()` rules still apply.
 
 ### URL download security and performance
 

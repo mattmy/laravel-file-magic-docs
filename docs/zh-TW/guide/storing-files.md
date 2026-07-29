@@ -194,10 +194,12 @@ public function files(): MorphMany
 
 ```php
 $post = Post::query()
-    ->with('attachment')
+    ->with('files')
     ->findOrFail($postId);
 
-return FileMagic::find($post->attachment)->download();
+$attachment = $post->files->firstOrFail();
+
+return FileMagic::find($attachment)->download();
 ```
 
 傳入既有的 `StoredFile` Model 不會再次執行資料庫查詢。

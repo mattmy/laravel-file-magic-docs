@@ -44,7 +44,11 @@ All three forms preserve input order and remove duplicate models. IDs and UUIDs 
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
 
-`one()` returns the first resolved `StoredFile` or `null`. `get()` returns an `Illuminate\Support\Collection<int, StoredFile>`, so the complete Laravel Collection API is available without exposing an Eloquent query builder.
+Valid IDs and UUIDs without a matching record are omitted. `one()` therefore returns
+the first resolved `StoredFile` or `null`, while operations that require a file,
+such as `download()` and `contents()`, throw `FileNotFound` when nothing resolves.
+`get()` returns an `Illuminate\Support\Collection<int, StoredFile>`, so the complete
+Laravel Collection API is available without exposing an Eloquent query builder.
 
 
 ## URLs
@@ -73,8 +77,10 @@ The disk must support the requested operation. Local temporary URLs require `ser
 ## Read and stream
 
 ```php
-if (FileMagic::find($target)->exists()) {
-    $smallContents = FileMagic::find($target)->contents();
+$file = FileMagic::find($target);
+
+if ($file->exists()) {
+    $smallContents = $file->contents();
 }
 ```
 

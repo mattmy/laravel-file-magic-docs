@@ -150,14 +150,17 @@ public function files(): MorphMany
 }
 ```
 
-Eager-load the relation from the owning model, then pass the already loaded file model into FileMagic:
+Eager-load the relation from the owning model, then pass an already loaded file
+model into FileMagic:
 
 ```php
 $post = Post::query()
-    ->with('attachment')
+    ->with('files')
     ->findOrFail($postId);
 
-return FileMagic::find($post->attachment)->download();
+$attachment = $post->files->firstOrFail();
+
+return FileMagic::find($attachment)->download();
 ```
 
 Passing an existing `StoredFile` model does not execute another database query.
