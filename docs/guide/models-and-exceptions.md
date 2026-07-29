@@ -36,6 +36,7 @@ All exceptions extend `FileMagicException`.
 | `InvalidRemoteOptions` | Invalid timeout, redirect, host, or port option |
 | `InvalidRemoteUrl` | Malformed or unsupported remote URL |
 | `RemoteAccessDenied` | Scheme, host, port, DNS, IP, or network policy rejected the URL |
+| `RemoteDownloadUnavailable` | PHP `ext-curl` is unavailable for `fromUrl()` |
 | `RemoteDownloadFailed` | DNS, TLS, connection, redirect, HTTP, or temporary download failure |
 | `InvalidFileName` | Unsafe or reserved name |
 | `InvalidStoragePath` | Unsafe directory |

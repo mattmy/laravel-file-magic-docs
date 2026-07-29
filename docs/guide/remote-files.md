@@ -2,6 +2,12 @@
 
 ## Store a file from a URL
 
+This optional feature requires PHP `ext-curl`. Creating the `PendingFile`
+remains lazy, but calling `store()` without cURL throws
+`RemoteDownloadUnavailable`. Uploads, local sources, generated documents, and
+existing-file operations remain available. Verify your CLI environment with
+`php --ri curl`.
+
 `fromUrl()` accepts absolute HTTP or HTTPS file URLs and returns the normal
 `PendingFile`. HTTPS is the default and TLS certificate verification is enabled:
 
