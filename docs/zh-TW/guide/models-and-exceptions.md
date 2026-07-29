@@ -50,6 +50,7 @@ final class StoredFile extends BaseStoredFile
 | `InvalidRemoteOptions` | 無效 timeout、redirect、host 或 port 設定 |
 | `InvalidRemoteUrl` | 格式錯誤或不支援的遠端 URL |
 | `RemoteAccessDenied` | Scheme、host、port、DNS、IP 或 network policy 拒絕網址 |
+| `RemoteDownloadUnavailable` | `fromUrl()` 所需的 PHP `ext-curl` 未啟用 |
 | `RemoteDownloadFailed` | DNS、TLS、連線、redirect、HTTP 或暫存下載失敗 |
 | `InvalidFileName` | 不安全或系統保留的檔名 |
 | `InvalidStoragePath` | 不安全的相對目錄 |
