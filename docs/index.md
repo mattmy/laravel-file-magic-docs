@@ -24,7 +24,9 @@ features:
 
 ## Requirements
 
-FileMagic supports PHP 8.3 or later and Laravel 12 or 13.
+FileMagic supports PHP 8.3 or later and Laravel 12 or 13. PHP `ext-fileinfo` is
+required and checked by Composer during installation. PHP `ext-curl` is
+optional and needed only for remote HTTP(S) imports through `fromUrl()`.
 
 ```bash
 composer require mattmy/laravel-file-magic

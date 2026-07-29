@@ -24,7 +24,9 @@ features:
 
 ## 系統需求
 
-FileMagic 支援 PHP 8.3 以上與 Laravel 12、13。
+FileMagic 支援 PHP 8.3 以上與 Laravel 12、13。PHP `ext-fileinfo` 是 Composer
+會在安裝階段檢查的必要依賴；PHP `ext-curl` 則只在透過 `fromUrl()` 匯入遠端
+HTTP(S) 檔案時需要。
 
 ```bash
 composer require mattmy/laravel-file-magic
