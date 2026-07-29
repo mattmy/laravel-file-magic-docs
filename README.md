@@ -1,7 +1,7 @@
 # FileMagic documentation
 
 This repository contains the English and Traditional Chinese documentation
-website for [FileMagic](https://github.com/mattmy/file-magic).
+website for [FileMagic](https://github.com/mattmy/laravel-file-magic).
 
 ## Local development
 
@@ -22,5 +22,5 @@ npm run docs:preview
 The site is configured for the default GitHub Pages project URL:
 
 ```text
-https://mattmy.github.io/file-magic-docs/
+https://mattmy.github.io/laravel-file-magic-docs/
 ```

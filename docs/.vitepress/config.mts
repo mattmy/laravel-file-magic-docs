@@ -1,15 +1,15 @@
 import { defineConfig } from 'vitepress'
 
-const repositoryUrl = 'https://github.com/mattmy/file-magic'
+const repositoryUrl = 'https://github.com/mattmy/laravel-file-magic'
 
 export default defineConfig({
   title: 'FileMagic',
   description: 'File management for Laravel',
-  base: '/file-magic-docs/',
+  base: '/laravel-file-magic-docs/',
   cleanUrls: true,
   lastUpdated: true,
   sitemap: {
-    hostname: 'https://mattmy.github.io/file-magic-docs/',
+    hostname: 'https://mattmy.github.io/laravel-file-magic-docs/',
   },
   locales: {
     root: {

@@ -11,7 +11,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/mattmy/file-magic
+      link: https://github.com/mattmy/laravel-file-magic
 
 features:
   - title: Multiple file sources
@@ -27,8 +27,8 @@ features:
 FileMagic supports PHP 8.3 or later and Laravel 12 or 13.
 
 ```bash
-composer require mattmy/file-magic
+composer require mattmy/laravel-file-magic
 ```
 
 Start with the [complete documentation](/guide/getting-started) or review the
-[source repository](https://github.com/mattmy/file-magic).
+[source repository](https://github.com/mattmy/laravel-file-magic).

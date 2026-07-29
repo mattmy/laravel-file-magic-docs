@@ -151,13 +151,13 @@ does not enable HTTP, private networks, arbitrary ports, or unsafe redirects.
 
 ## License
 
-FileMagic is open-source software licensed under the [MIT License](https://github.com/mattmy/file-magic/blob/main/LICENSE).
+FileMagic is open-source software licensed under the [MIT License](https://github.com/mattmy/laravel-file-magic/blob/main/LICENSE).
 
 
 ## Project maintenance
 
-- Read [CONTRIBUTING.md](https://github.com/mattmy/file-magic/blob/main/CONTRIBUTING.md) before submitting a pull request.
-- Report vulnerabilities privately according to [SECURITY.md](https://github.com/mattmy/file-magic/blob/main/SECURITY.md).
+- Read [CONTRIBUTING.md](https://github.com/mattmy/laravel-file-magic/blob/main/CONTRIBUTING.md) before submitting a pull request.
+- Report vulnerabilities privately according to [SECURITY.md](https://github.com/mattmy/laravel-file-magic/blob/main/SECURITY.md).
 - Releases follow [Semantic Versioning](https://semver.org/) and are documented
-  in [CHANGELOG.md](https://github.com/mattmy/file-magic/blob/main/CHANGELOG.md).
+  in [CHANGELOG.md](https://github.com/mattmy/laravel-file-magic/blob/main/CHANGELOG.md).
 
