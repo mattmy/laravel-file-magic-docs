@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">FileMagic</title>
+  <defs>
+    <linearGradient id="gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#gradient)" d="M15 5h23l11 11v39a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4Z"/>
+  <path fill="#fff" fill-opacity=".32" d="M38 5v11h11Z"/>
+  <path fill="#fff" d="m30 22 2.4 6.6L39 31l-6.6 2.4L30 40l-2.4-6.6L21 31l6.6-2.4L30 22Zm10 14 1.2 3.3 3.3 1.2-3.3 1.2L40 45l-1.2-3.3-3.3-1.2 3.3-1.2L40 36Z"/>
+</svg>
+
