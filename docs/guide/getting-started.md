@@ -17,7 +17,7 @@ ZIP downloads additionally need PHP `ext-zip`.
 ## Installation
 
 ```bash
-composer require mattmy/file-magic
+composer require mattmy/laravel-file-magic
 php artisan vendor:publish --tag=file-magic-config
 php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate

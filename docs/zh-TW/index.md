@@ -11,7 +11,7 @@ hero:
       link: /zh-TW/guide/getting-started
     - theme: alt
       text: 前往 GitHub
-      link: https://github.com/mattmy/file-magic
+      link: https://github.com/mattmy/laravel-file-magic
 
 features:
   - title: 多種檔案來源
@@ -27,8 +27,8 @@ features:
 FileMagic 支援 PHP 8.3 以上與 Laravel 12、13。
 
 ```bash
-composer require mattmy/file-magic
+composer require mattmy/laravel-file-magic
 ```
 
 從[完整繁體中文文件](/zh-TW/guide/getting-started)開始，或前往
-[原始碼倉庫](https://github.com/mattmy/file-magic)。
+[原始碼倉庫](https://github.com/mattmy/laravel-file-magic)。

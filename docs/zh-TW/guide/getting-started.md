@@ -23,7 +23,7 @@ ZIP 批次下載另外需要 PHP `ext-zip`。
 透過 Composer 安裝套件：
 
 ```bash
-composer require mattmy/file-magic
+composer require mattmy/laravel-file-magic
 ```
 
 發佈設定檔：
