@@ -1,0 +1,161 @@
+# 遠端檔案
+
+## 從網址儲存檔案
+
+`fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。預設只接受
+HTTPS，而且會驗證 TLS certificate：
+
+```php
+use Mattmy\FileMagic\Facades\FileMagic;
+
+$file = FileMagic::fromUrl(
+    'https://downloads.example.com/manual.pdf',
+)
+    ->onDisk('s3')
+    ->inDirectory('manuals')
+    ->named('product-manual')
+    ->maxSize(20 * 1024 * 1024)
+    ->withMetadata(['source' => 'vendor'])
+    ->store();
+```
+
+支援的常見網址例如：
+
+```text
+https://cdn.example.com/images/avatar.jpg
+https://downloads.example.com/documents/manual.pdf
+https://media.example.com/videos/introduction.mp4
+https://files.example.com/archive.zip
+```
+
+只支援 HTTP(S)。`file:`、`ftp:`、`gopher:`、`data:`、包含帳號密碼或 fragment 的
+網址、不允許的 port，以及解析到受保護網路的網址都會被拒絕。
+
+### RemoteFileOptions
+
+單次操作需要自訂遠端行為時，傳入 immutable `RemoteFileOptions`：
+
+```php
+use Mattmy\FileMagic\Data\RemoteFileOptions;
+
+$options = new RemoteFileOptions(
+    verifyTls: true,
+    allowHttp: false,
+    allowHtml: false,
+    connectTimeoutSeconds: 5,
+    timeoutSeconds: 30,
+    maxRedirects: 3,
+    allowedHosts: ['downloads.example.com'],
+    allowedPorts: [80, 443],
+    allowedPrivateHosts: [],
+);
+
+$file = FileMagic::fromUrl(
+    'https://downloads.example.com/report.pdf',
+    $options,
+)->store();
+```
+
+| Option | 型別 | 預設值 | 行為 |
+| --- | --- | --- | --- |
+| `verifyTls` | `bool` | `true` | 驗證 HTTPS certificate、hostname 與 certificate chain |
+| `allowHttp` | `bool` | `false` | 明確允許未加密 HTTP |
+| `allowHtml` | `bool` | `false` | 允許偵測為 HTML 或 XHTML 的內容 |
+| `connectTimeoutSeconds` | `int` | `5` | 連線逾時，必須大於零 |
+| `timeoutSeconds` | `int` | `30` | 完整下載逾時，不得小於連線逾時 |
+| `maxRedirects` | `int` | `3` | `0` 至 `10`，每一跳都重新驗證 |
+| `allowedHosts` | `list<string>` | `[]` | 精確 host allowlist；空陣列允許通過檢查的 public host |
+| `allowedPorts` | `list<int>` | `[80, 443]` | 不可為空，每個值必須介於 `1` 至 `65535` |
+| `allowedPrivateHosts` | `list<string>` | `[]` | 明確允許解析到 private address 的精確 host |
+
+清單包含 port `80` 不代表預設會允許 HTTP；預設 `allowHttp: false` 仍會拒絕 HTTP。
+如需使用標準 HTTP，不必重複設定預設 port：
+
+```php
+$file = FileMagic::fromUrl(
+    'http://downloads.example.com/manual.pdf',
+    new RemoteFileOptions(allowHttp: true),
+)->store();
+```
+
+非標準 port 必須明確加入：
+
+```php
+$file = FileMagic::fromUrl(
+    'https://downloads.example.com:8443/manual.pdf',
+    new RemoteFileOptions(allowedPorts: [80, 443, 8443]),
+)->store();
+```
+
+`allowedPorts` 空陣列是無效設定，絕不代表允許全部 port。Host 名單會正規化並精確
+比對。`allowedHosts: []` 只允許通過全部 DNS 與 IP 檢查的 public host；private
+network 仍會被封鎖，除非精確 host 已列在 `allowedPrivateHosts`。
+
+### TLS 驗證
+
+TLS 驗證預設開啟。FileMagic 不會靜默關閉驗證，也不會把 HTTPS 降級為 HTTP。在受控
+的開發或內部環境使用 self-signed certificate 時，可以明確停用：
+
+```php
+$file = FileMagic::fromUrl(
+    'https://development.example.test/manual.pdf',
+    RemoteFileOptions::withoutTlsVerification(),
+)->store();
+```
+
+> **安全警告：**停用 TLS 驗證後，中間人可能替換下載內容。請勿在 public 或不可信任
+> 網路使用。這個選項不會開啟 HTTP，也不會停用 SSRF 防護。
+
+如需同時自訂其他項目：
+
+```php
+$options = new RemoteFileOptions(
+    verifyTls: false,
+    timeoutSeconds: 60,
+    allowedHosts: ['development.example.test'],
+);
+```
+
+### 官網與 HTML 回應
+
+一般官網通常回傳 `text/html`，而不是可下載文件。FileMagic 預設會拒絕偵測為
+`text/html` 或 `application/xhtml+xml` 的內容並拋出 `DisallowedMimeType`，不會把
+網頁原始碼偽裝成 `.txt`。
+
+確實需要保存 HTML 時：
+
+```php
+use Mattmy\FileMagic\Enums\FileVisibility;
+
+$file = FileMagic::fromUrl(
+    'https://www.example.com/page',
+    new RemoteFileOptions(allowHtml: true),
+)
+    ->visibility(FileVisibility::Private)
+    ->store();
+```
+
+允許後會使用實際 HTML MIME 與 `.html` 儲存。HTML 從應用程式同源顯示時可能執行
+script；除非應用程式會隔離並清理內容，否則應保持 private 並以 attachment 下載。
+
+### 網址下載的安全性與效能
+
+FileMagic 會解析全部 A 與 AAAA records，封鎖 loopback、private、link-local、
+reserved、multicast、unspecified 與 cloud metadata address，將驗證過的 IP 固定到
+實際連線，關閉自動 redirect，並對每一跳重新執行完整驗證。`allowedPrivateHosts`
+只用於逐一允許已知內部服務，不提供一次允許所有 private network 的選項。
+
+遠端 response headers 與 URL filename 都是不可信任提示；MIME 與 extension 由下載
+內容判斷。`Content-Length` 可提前拒絕過大回應，但實際串流 bytes 仍一定受到
+`maxSize()` 或全域 `max_size` 限制。
+
+每個 URL 只執行一次 streaming GET。暫存檔會供 inspection、checksum、選用的圖片
+處理與 storage 共用，成功或失敗後都會刪除。此流程不會把完整 response 放入 PHP
+memory，但會占用接近下載檔案大小的本機暫存空間，並在同步下載完成前占用目前的 PHP
+worker。正式環境仍應搭配 outbound firewall 作為額外防線。
+
+儲存完成不代表內容一定無惡意。處理不可信任或高風險來源時，建議使用 private
+visibility、attachment download、MIME allowlist、`X-Content-Type-Options: nosniff`
+以及 antivirus／content scanning service。
+
+

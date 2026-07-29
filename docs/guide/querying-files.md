@@ -1,0 +1,113 @@
+# Querying files
+
+## Query files
+
+All normal file lookups go through the single `find()` entry point. It accepts a positive integer ID, UUID, or existing `StoredFile` model:
+
+```php
+$file = FileMagic::find($id)->one();
+$file = FileMagic::find($uuid)->one();
+$file = FileMagic::find($fileModel)->one();
+```
+
+You may operate on the first resolved file without extracting the model:
+
+```php
+FileMagic::find($uuid)->contents();
+FileMagic::find($fileModel)->download();
+FileMagic::find($id)->delete();
+```
+
+Batch lookups accept variadic targets, an array, or a Laravel Collection:
+
+```php
+$variadic = FileMagic::find(
+    $firstId,
+    $secondUuid,
+    $fileModel,
+)->get();
+
+$array = FileMagic::find([
+    $firstId,
+    $secondUuid,
+    $fileModel,
+])->get();
+
+$collection = FileMagic::find(collect([
+    $firstId,
+    $secondUuid,
+    $fileModel,
+]))->get();
+```
+
+All three forms preserve input order and remove duplicate models. IDs and UUIDs are fetched in one query; model targets are reused without querying. Empty arrays and Collections return an empty `Illuminate\Support\Collection` without a query.
+
+Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
+
+`one()` returns the first resolved `StoredFile` or `null`. `get()` returns an `Illuminate\Support\Collection<int, StoredFile>`, so the complete Laravel Collection API is available without exposing an Eloquent query builder.
+
+
+## URLs
+
+```php
+$publicUrl = FileMagic::find($target)->url();
+$temporaryUrl = FileMagic::find($target)->temporaryUrl();
+$customExpiration = FileMagic::find($target)
+    ->temporaryUrl(now()->addMinutes(30));
+```
+
+Retrieve public URLs for multiple targets:
+
+```php
+$urls = FileMagic::find([
+    $firstUuid,
+    $secondUuid,
+])->urls();
+```
+
+`urls()` returns an `Illuminate\Support\Collection<int|string, string>` keyed by model key. Files that do not exist on disk are omitted.
+
+The disk must support the requested operation. Local temporary URLs require `serve => true`; cloud disks require their normal credentials.
+
+
+## Read and stream
+
+```php
+if (FileMagic::find($target)->exists()) {
+    $smallContents = FileMagic::find($target)->contents();
+}
+```
+
+Use streams for large files:
+
+```php
+$stream = FileMagic::find($target)->readStream();
+
+try {
+    while (\feof($stream) === false) {
+        $chunk = \fread($stream, 8192);
+
+        if ($chunk === false) {
+            break;
+        }
+
+        // Consume the chunk.
+    }
+} finally {
+    \fclose($stream);
+}
+```
+
+The caller owns and must close the returned stream.
+
+
+## Download
+
+```php
+return FileMagic::find($target)->download();
+return FileMagic::find($target)->download('invoice-2026.pdf');
+```
+
+Laravel streams the response using the detected MIME type.
+
+
