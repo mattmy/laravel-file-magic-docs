@@ -17,28 +17,7 @@ export default defineConfig({
       lang: 'en',
       title: 'FileMagic',
       description: 'File management for Laravel',
-    },
-    'zh-TW': {
-      label: '繁體中文',
-      lang: 'zh-TW',
-      link: '/zh-TW/',
-      title: 'FileMagic',
-      description: 'Laravel 檔案管理套件',
-    },
-  },
-  themeConfig: {
-    logo: '/logo.svg',
-    search: {
-      provider: 'local',
-    },
-    socialLinks: [
-      {
-        icon: 'github',
-        link: repositoryUrl,
-      },
-    ],
-    locales: {
-      root: {
+      themeConfig: {
         nav: [
           {
             text: 'Home',
@@ -107,7 +86,14 @@ export default defineConfig({
           copyright: 'Copyright © mattmy',
         },
       },
-      'zh-TW': {
+    },
+    'zh-TW': {
+      label: '繁體中文',
+      lang: 'zh-TW',
+      link: '/zh-TW/',
+      title: 'FileMagic',
+      description: 'Laravel 檔案管理套件',
+      themeConfig: {
         nav: [
           {
             text: '首頁',
@@ -177,5 +163,17 @@ export default defineConfig({
         },
       },
     },
+  },
+  themeConfig: {
+    logo: '/logo.svg',
+    search: {
+      provider: 'local',
+    },
+    socialLinks: [
+      {
+        icon: 'github',
+        link: repositoryUrl,
+      },
+    ],
   },
 })
