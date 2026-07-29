@@ -6,9 +6,15 @@ FileMagic 是一個專為 Laravel 設計的檔案管理套件。
 
 - PHP 8.3 或以上
 - Laravel 12 或 13
-- PHP `curl` extension
-- PHP `fileinfo` extension
+- PHP `ext-fileinfo`
 - 至少一個已設定完成的 Laravel Filesystem disk
+
+Composer 會在安裝階段檢查 `ext-fileinfo`，因為 FileMagic 必須依實際檔案內容偵測
+MIME type，而不會信任檔名或 client 提供的 MIME type。
+
+透過 `fromUrl()` 匯入遠端 HTTP(S) 檔案時，另外需要 PHP `ext-curl`。缺少時其他功能
+仍可使用，但儲存遠端來源會拋出 `RemoteDownloadUnavailable`。可使用
+`php --ri curl` 確認 CLI 使用的 PHP 是否已啟用此 extension。
 
 圖片縮放功能另外需要：
 

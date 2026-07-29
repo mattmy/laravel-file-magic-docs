@@ -2,6 +2,10 @@
 
 ## 從網址儲存檔案
 
+這項選用功能需要 PHP `ext-curl`。建立 `PendingFile` 時仍維持 lazy；若未啟用 cURL，
+呼叫 `store()` 會拋出 `RemoteDownloadUnavailable`。上傳、本機來源、產生文件及
+既有檔案操作仍可使用。可以執行 `php --ri curl` 確認 CLI 環境。
+
 `fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。預設只接受
 HTTPS，而且會驗證 TLS certificate：
 
