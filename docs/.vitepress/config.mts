@@ -62,6 +62,10 @@ export default defineConfig({
                   link: '/guide/zip-and-deletion',
                 },
                 {
+                  text: 'Consistency audits',
+                  link: '/guide/maintenance',
+                },
+                {
                   text: 'Models and exceptions',
                   link: '/guide/models-and-exceptions',
                 },
@@ -136,6 +140,10 @@ export default defineConfig({
                 {
                   text: 'ZIP 與刪除',
                   link: '/zh-TW/guide/zip-and-deletion',
+                },
+                {
+                  text: '一致性稽核',
+                  link: '/zh-TW/guide/maintenance',
                 },
                 {
                   text: 'Model 與例外',
