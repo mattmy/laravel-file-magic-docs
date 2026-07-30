@@ -26,8 +26,14 @@ php artisan file-magic:audit --disk=s3
 php artisan file-magic:audit --chunk=250
 ```
 
-`--disk` accepts exactly one disk configured in `filesystems.disks`.
-`--chunk` accepts an integer from `1` through `5000` and defaults to `500`.
+| Option | Type and default | Behavior |
+| --- | --- | --- |
+| `--disk` | `?non-empty-string`, default `null` | Audit exactly one disk configured in `filesystems.disks`; omit it to audit all records |
+| `--chunk` | `int<1, 5000>`, default `500` | Number of database records loaded per batch |
+| `--delete-missing-records` | Boolean flag, default `false` | Delete database records whose objects are confirmed missing |
+| `--force` | Boolean flag, default `false` | Skip confirmation in cleanup mode; invalid without `--delete-missing-records` |
+
+Invalid option values exit with code `2` before scanning or changing data.
 The command uses the configured FileMagic model, including its connection,
 table, and primary key, and ignores global scopes so maintenance does not
 silently skip records.
