@@ -20,6 +20,8 @@ features:
     details: 透過 Laravel Filesystem 儲存，並以可自訂的 Eloquent Model 維護紀錄。
   - title: 安全預設
     details: 提供嚴格驗證、SSRF 防護、Overwrite 還原與一致的批次刪除。
+  - title: 維運可見性
+    details: 以明確清理、受控記憶體與可預期 exit code 稽核 database record 與 storage。
 ---
 
 ## 系統需求
@@ -27,6 +29,8 @@ features:
 FileMagic 支援 PHP 8.3 以上與 Laravel 12、13。PHP `ext-fileinfo` 是 Composer
 會在安裝階段檢查的必要依賴；PHP `ext-curl` 則只在透過 `fromUrl()` 匯入遠端
 HTTP(S) 檔案時需要。
+圖片縮放需要 Intervention Image 4 搭配 GD 或 Imagick；ZIP 批次下載則需要 PHP
+`ext-zip`。
 
 ```bash
 composer require mattmy/laravel-file-magic
