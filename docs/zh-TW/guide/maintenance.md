@@ -25,10 +25,16 @@ php artisan file-magic:audit --disk=s3
 php artisan file-magic:audit --chunk=250
 ```
 
-`--disk` 只接受 `filesystems.disks` 已設定的一個 disk。`--chunk` 接受 `1` 至
-`5000` 的整數，預設為 `500`。指令會使用 FileMagic 設定的自訂 Model，包括它的
-connection、table 與 primary key，並忽略 global scopes，避免維護作業靜默漏掉
-records。
+| Option | 型別與預設 | 行為 |
+| --- | --- | --- |
+| `--disk` | `?non-empty-string`，預設 `null` | 只稽核一個已設定於 `filesystems.disks` 的 disk；省略時稽核全部 records |
+| `--chunk` | `int<1, 5000>`，預設 `500` | 每批載入的 database records 數量 |
+| `--delete-missing-records` | Boolean flag，預設 `false` | 刪除已確認 object 缺失的 database records |
+| `--force` | Boolean flag，預設 `false` | 在清理模式略過確認；未搭配 `--delete-missing-records` 時無效 |
+
+無效的 option 會在掃描或修改資料前以 exit code `2` 結束。指令會使用 FileMagic
+設定的自訂 Model，包括它的 connection、table 與 primary key，並忽略 global
+scopes，避免維護作業靜默漏掉 records。
 
 每筆 missing finding 只顯示 database key、disk 與 storage 相對 path。最後摘要會
 列出 `checked`、`healthy`、`missing`、`deleted` 及 `failed`。
