@@ -9,8 +9,8 @@ FileMagic 是一個專為 Laravel 設計的檔案管理套件。
 - PHP `ext-fileinfo`
 - 至少一個已設定完成的 Laravel Filesystem disk
 
-Composer 會在安裝階段檢查 `ext-fileinfo`，因為 FileMagic 必須依實際檔案內容偵測
-MIME type，而不會信任檔名或 client 提供的 MIME type。
+FileMagic 使用 `ext-fileinfo` 取得儲存檔案的類型。Client 回報的檔名與 MIME type
+不能用來證明檔案的實際類型。
 
 透過 `fromUrl()` 匯入遠端 HTTP(S) 檔案時，另外需要 PHP `ext-curl`。缺少時其他功能
 仍可使用，但儲存遠端來源會拋出 `RemoteDownloadUnavailable`。可使用
@@ -44,19 +44,6 @@ php artisan vendor:publish --tag=file-magic-config
 php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate
 ```
-
-Laravel 會自動發現 `Mattmy\FileMagic\FileMagicServiceProvider` 與 `FileMagic` Facade。
-
-如果專案停用了 package discovery，可以在 `bootstrap/providers.php` 手動註冊 Service Provider：
-
-```php
-use Mattmy\FileMagic\FileMagicServiceProvider;
-
-return [
-    FileMagicServiceProvider::class,
-];
-```
-
 
 ## 設定
 
@@ -132,9 +119,9 @@ FILE_MAGIC_VISIBILITY=private
 ```
 
 
-## 核心操作流程
+## 儲存第一個檔案
 
-FileMagic 的操作分成三個階段：
+儲存檔案分成三個步驟：
 
 1. 使用 `fromUpload()`、`fromPath()`、`fromUrl()`、`fromContent()`、`fromBase64()`、`text()`、`json()` 或 `csv()` 建立 `PendingFile`。
 2. 使用 `onDisk()`、`inDirectory()`、`named()`、`visibility()` 等方法設定儲存方式。

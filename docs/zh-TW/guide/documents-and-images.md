@@ -40,7 +40,9 @@ $file = FileMagic::csv([
 
 Associative rows 會使用第一列的 key 自動產生 header；list rows 不會產生 header。每列必須使用相同的 key 與順序，每個值必須是 scalar 或 `null`。CSV 固定使用不含 BOM 的 UTF-8、逗號 delimiter、雙引號 enclosure 與 CRLF 行尾。
 
-三個方法都會回傳一般的 `PendingFile`，因此仍可使用 disk、directory、filename、visibility、collision、owner、metadata、MIME 與 size 設定。`PendingFile` 固定使用 `store()` 完成儲存，不提供 `storage()`、`toTxt()`、`toJson()` 或 `toCsv()` 別名。儲存後可直接使用既有的 `StoredFile` 與 `FileQuery` API。
+三個方法都會回傳 `PendingFile`，因此仍可使用 disk、directory、filename、visibility、
+collision、owner、metadata、MIME 與 size 設定。呼叫 `store()` 後會取得一般的
+`StoredFile`，也能使用所有 `FileQuery` 操作。
 
 無效 UTF-8、無法編碼的 JSON 值，以及結構不一致的 CSV rows 會拋出 `InvalidDocumentData`。
 

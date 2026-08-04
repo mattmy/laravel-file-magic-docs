@@ -2,11 +2,9 @@
 
 ## Store a file from a URL
 
-This optional feature requires PHP `ext-curl`. Creating the `PendingFile`
-remains lazy, but calling `store()` without cURL throws
-`RemoteDownloadUnavailable`. Uploads, local sources, generated documents, and
-existing-file operations remain available. Verify your CLI environment with
-`php --ri curl`.
+This optional feature requires PHP `ext-curl`. Without it, `store()` for a remote file throws
+`RemoteDownloadUnavailable`; uploads, local sources, generated documents, and existing-file
+operations remain available. Verify your CLI environment with `php --ri curl`.
 
 `fromUrl()` accepts absolute HTTP or HTTPS file URLs and returns the normal
 `PendingFile`. HTTPS is the default and TLS certificate verification is enabled:
@@ -40,7 +38,7 @@ networks are rejected.
 
 ### RemoteFileOptions
 
-Pass an immutable `RemoteFileOptions` when one operation needs different behavior:
+Pass `RemoteFileOptions` when one download needs different rules:
 
 ```php
 use Mattmy\FileMagic\Data\RemoteFileOptions;
@@ -159,23 +157,18 @@ download it as an attachment unless the application sanitizes and isolates it.
 
 ### URL download security and performance
 
-FileMagic resolves every A and AAAA record, blocks loopback, private, link-local,
-reserved, multicast, unspecified, and cloud-metadata addresses, pins the validated
-IP to the connection, disables automatic redirects, and repeats validation for
-every redirect. `allowedPrivateHosts` is an explicit escape hatch for known internal
-services; there is no option that enables every private network.
+FileMagic blocks local, private, reserved, and cloud metadata destinations, including after
+redirects. `allowedPrivateHosts` can allow specific known internal services; it does not
+allow every private-network destination.
 
 Remote response headers and URL filenames are untrusted hints. MIME and extension
 come from the downloaded bytes. `Content-Length` may reject an oversized response
 early, but the actual streamed bytes are always limited by `maxSize()` or the global
 `max_size`.
 
-Each URL is fetched once with a streaming GET. The temporary file is reused for
-inspection, checksum, optional image processing, and storage, then removed on
-success or failure. This avoids loading the whole response into PHP memory, but it
-uses local temporary disk roughly equal to the downloaded size and occupies the
-current PHP worker until the synchronous download finishes. Configure application
-and network egress controls as defense in depth.
+Remote downloads use local temporary space close to the downloaded size and keep the current
+PHP worker busy until the download finishes. Use a queue for large or slow downloads, and
+configure application and network egress controls as additional production boundaries.
 
 Stored bytes are not automatically safe. Prefer private visibility, attachment
 downloads, MIME allowlists, `X-Content-Type-Options: nosniff`, and an antivirus or

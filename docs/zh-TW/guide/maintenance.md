@@ -33,8 +33,8 @@ php artisan file-magic:audit --chunk=250
 | `--force` | Boolean flag，預設 `false` | 在清理模式略過確認；未搭配 `--delete-missing-records` 時無效 |
 
 無效的 option 會在掃描或修改資料前以 exit code `2` 結束。指令會使用 FileMagic
-設定的自訂 Model，包括它的 connection、table 與 primary key，並忽略 global
-scopes，避免維護作業靜默漏掉 records。
+設定的 Model、connection、table 與 primary key。即使 Model 有 global scopes，仍會
+檢查全部 records；需要縮小範圍時請使用 `--disk`。
 
 每筆 missing finding 只顯示 database key、disk 與 storage 相對 path。最後摘要會
 列出 `checked`、`healthy`、`missing`、`deleted` 及 `failed`。
@@ -57,14 +57,13 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 `--force` 沒有搭配 `--delete-missing-records` 時屬於無效輸入。Storage 檢查拋出
 例外時仍屬於 unknown，絕不刪除該 record。
 
-清理會在每個 chunk 對已確認 missing 的 keys 執行一次不受 scope 影響的 bulk
-delete。Bulk query 不會觸發逐筆 Eloquent `deleting` 或 `deleted` model events。
+清理不會逐筆觸發 Eloquent `deleting` 或 `deleted` model events。應用程式需要為每筆
+移除紀錄執行這些 events 時，不要使用此清理功能。
 
 ## 成本、效能與一致性
 
-Laravel Filesystem 沒有跨 adapter 通用的批次存在性檢查，因此 FileMagic 對每筆
-database record 都必須呼叫一次 `exists()`。使用 S3 或其他遠端 disk 時，這些呼叫
-可能增加網路延遲與可計費的 request 費用。
+稽核會對每筆選定的 database record 執行一次 storage existence check。使用 S3 或
+其他遠端 disk 時，這些 checks 可能增加網路延遲與可計費的 request 費用。
 
 `--chunk` 只控制 database query 大小與 PHP memory 使用量，不會減少 storage
 requests 數量。請使用 `--disk` 限制範圍、選擇適當 chunk size，並避免以超過實際
@@ -77,10 +76,8 @@ requests 數量。請使用 `--disk` 限制範圍、選擇適當 chunk size，�
 Storage、網路、adapter 或權限例外都會被視為 unknown failure，而不是 missing。
 指令會保留相關 records 並回傳 exit code `2`。
 
-清理不會使用一個涵蓋整個指令的 database transaction，而是每個 chunk 分開刪除。
-若發生 database exception 或 affected-row mismatch，指令會停止後續刪除並回傳
-exit code `2`，但先前 chunks 可能已完成刪除，且不會自動 rollback。指令永遠不會
-刪除 storage objects。
+清理不是全部成功才生效。發生 database error 時，指令會停止並回傳 exit code `2`，
+但先前處理的 records 可能已經刪除。指令永遠不會刪除 storage objects。
 
 ## Exit codes
 

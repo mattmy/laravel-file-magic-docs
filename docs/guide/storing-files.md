@@ -93,15 +93,10 @@ Collision policies:
 - `Error` throws `FileWriteFailed`.
 - `Overwrite` intentionally replaces the physical path and updates its existing database record.
 
-`Overwrite` first streams the complete existing object into a seekable temporary file on
-the PHP server's local disk. If the new storage write or database update fails, FileMagic
-restores the original content and visibility before reporting the failure. The temporary
-backup is closed and deleted after the operation.
-
-This safety has a cost: the server needs local temporary space approximately equal to the
-existing file size, and the operation performs additional storage reads and local disk I/O.
-`Overwrite` is therefore slower than normal storage. Prefer the default `Unique` policy
-unless the application specifically needs to preserve the same storage path.
+`Overwrite` keeps the existing file available if replacement fails. It needs local temporary
+space close to the existing file size and performs more storage and disk work, so it is slower
+than normal storage. Prefer the default `Unique` policy unless the storage path must stay the
+same. If both replacement and recovery fail, `FileRecoveryFailed` is thrown.
 
 
 ## Size and MIME restrictions

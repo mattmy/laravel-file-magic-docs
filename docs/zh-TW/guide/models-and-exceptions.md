@@ -21,10 +21,10 @@ final class StoredFile extends BaseStoredFile
 'model' => App\Models\StoredFile::class,
 ```
 
-自訂 Model 必須繼承套件提供的 `StoredFile`。FileMagic 會在儲存、查詢與刪除流程
-一致使用自訂 Model，包括它的 connection、table 與 primary key。由於套件已經解析
-出明確 keys，批次刪除紀錄會使用不套用 global scope 的 bulk query，因此不會觸發
-逐筆 Eloquent `deleting` 或 `deleted` events。
+自訂 Model 必須繼承套件提供的 `StoredFile`。FileMagic 儲存、尋找與刪除檔案時會使用
+該 Model 的 connection、table 與 primary key。批次刪除不套用 global scopes，也不會
+逐筆觸發 `deleting` 與 `deleted` events；應用程式依賴這些 scope 或 event 時，請改用
+單筆 Model 刪除。
 
 
 ## 自訂資料表

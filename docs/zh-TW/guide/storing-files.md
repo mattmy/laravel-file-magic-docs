@@ -105,13 +105,9 @@ CollisionPolicy::Overwrite;
 - `Error`：目標路徑已存在時拋出 `FileWriteFailed`。
 - `Overwrite`：覆寫既有實體檔案並更新同一筆資料庫紀錄。
 
-`Overwrite` 會先把完整舊 object 以 stream 落地備份到 PHP 伺服器的本機暫存硬碟。
-如果新內容寫入 storage 或更新 database 失敗，FileMagic 會先還原原始內容及
-visibility，再回報原本的失敗。操作結束後會關閉並刪除暫存備份。
-
-這項安全機制會產生成本：伺服器需要接近舊檔案大小的本機暫存空間，而且會增加
-storage 讀取及本機硬碟 I/O，因此 `Overwrite` 的整體效能會低於一般儲存。除非應用
-程式確實需要維持相同 storage path，否則建議使用預設的 `Unique`。
+`Overwrite` 在取代失敗時會盡量保留原有檔案。它需要接近原檔案大小的本機暫存空間，
+也會增加 storage 與 disk 操作，因此比一般儲存慢。除非 storage path 必須保持不變，
+否則建議使用預設的 `Unique`。如果取代與還原都失敗，會拋出 `FileRecoveryFailed`。
 
 
 ## 檔案大小與 MIME type 限制

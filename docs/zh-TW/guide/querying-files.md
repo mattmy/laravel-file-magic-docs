@@ -40,15 +40,16 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-三種形式都會保留輸入順序並移除重複 Model。ID 與 UUID 會合併成一筆查詢；Model target 會直接使用，不會重新查詢。空 array 或 Collection 會回傳空的 `Illuminate\Support\Collection`，且不執行查詢。
+三種形式都會保留輸入順序並移除重複 Model。已存在的 Model target 會直接使用。
+空 array 或 Collection 會回傳空的 `Illuminate\Support\Collection`。
 
 Array 與 Collection 必須是一維結構，每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。無效元素會拋出 `InvalidFileTarget`，不會被靜默移除。
 
 合法但找不到紀錄的 ID 或 UUID 會從結果中省略，因此 `one()` 會回傳第一個符合的
 `StoredFile` 或 `null`；`download()`、`contents()` 等必須取得檔案的操作在沒有任何
 結果時則會拋出 `FileNotFound`。`get()` 會回傳
-`Illuminate\Support\Collection<int, StoredFile>`，可使用完整的 Laravel Collection
-API，同時不會暴露 Eloquent query builder。
+`Illuminate\Support\Collection<int, StoredFile>`，可以使用 `map()`、`filter()`、
+`pluck()` 等一般 Laravel Collection 方法。
 
 
 ## 取得 URL

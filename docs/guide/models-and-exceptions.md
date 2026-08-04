@@ -15,10 +15,10 @@ final class StoredFile extends BaseStoredFile {}
 'table' => 'assets',
 ```
 
-The custom model must extend the package model. FileMagic uses it consistently for storage,
-lookup, and deletion, including its connection, table, and primary key. Batch record deletion
-uses an unscoped bulk query because FileMagic has already resolved explicit keys. It therefore
-bypasses global scopes and does not dispatch per-model Eloquent `deleting` or `deleted` events.
+The custom model must extend the package model. FileMagic uses its connection, table, and
+primary key when storing, finding, and deleting files. Batch deletion does not apply global
+scopes or dispatch each model's `deleting` and `deleted` events; use single-model deletion
+when your application depends on those scopes or events.
 
 Configure a custom table before publishing the migration. If already deployed, create a new
 migration rather than editing migration history.
@@ -44,7 +44,7 @@ All exceptions extend `FileMagicException`.
 | `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` |
 | `FileTooLarge` | Byte limit exceeded |
 | `DisallowedMimeType` | MIME type rejected |
-| `FileWriteFailed` | Storage write, collision, overwrite backup, or deletion failure |
+| `FileWriteFailed` | Storage write, collision, replacement, or deletion failure |
 | `FileRecordFailed` | Database persistence failure |
 | `FileRecoveryFailed` | An overwrite failed and the original object could not be restored |
 | `PartialFileDeletion` | Only confirmed missing objects and their records were deleted |

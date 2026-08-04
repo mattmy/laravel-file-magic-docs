@@ -34,9 +34,8 @@ php artisan file-magic:audit --chunk=250
 | `--force` | Boolean flag, default `false` | Skip confirmation in cleanup mode; invalid without `--delete-missing-records` |
 
 Invalid option values exit with code `2` before scanning or changing data.
-The command uses the configured FileMagic model, including its connection,
-table, and primary key, and ignores global scopes so maintenance does not
-silently skip records.
+The command uses the configured FileMagic model, connection, table, and primary key. It checks
+records even when the model has global scopes, so use `--disk` when the audit must be narrowed.
 
 Each missing finding shows only its database key, disk, and storage-relative
 path. The final summary includes `checked`, `healthy`, `missing`, `deleted`,
@@ -61,16 +60,13 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 `--force` is invalid without `--delete-missing-records`. Storage checks that
 throw exceptions remain unknown and their records are never deleted.
 
-Cleanup performs one unscoped bulk delete for the confirmed missing keys in
-each chunk. Bulk queries do not dispatch individual Eloquent `deleting` or
-`deleted` model events.
+Cleanup does not dispatch each model's Eloquent `deleting` or `deleted` events. Do not use
+cleanup when your application requires those events for each removed record.
 
 ## Cost, performance, and consistency
 
-Laravel Filesystem does not provide one portable bulk existence check.
-FileMagic therefore performs exactly one `exists()` call for every database
-record it audits. On S3 and other remote disks, those calls can add network
-latency and billable request charges.
+The audit performs one storage existence check for every selected database record. On S3 and
+other remote disks, these checks can add network latency and billable request charges.
 
 `--chunk` controls database query size and PHP memory use only. It does not
 reduce the number of storage requests. Use `--disk` to limit scope, choose an
@@ -86,11 +82,9 @@ Storage, network, adapter, and permission exceptions are reported as unknown
 failures rather than missing objects. They produce exit code `2` and preserve
 the affected records.
 
-Cleanup is not wrapped in one command-wide database transaction. Every chunk
-is deleted separately. If a database exception or affected-row mismatch occurs,
-the command stops further deletion and exits with code `2`, but records from
-earlier chunks may already have been deleted and are not automatically rolled
-back. The command never deletes storage objects.
+Cleanup is not all-or-nothing. If a database error occurs, the command stops with exit code
+`2`, but records handled earlier may already be deleted. The command never deletes storage
+objects.
 
 ## Exit codes
 

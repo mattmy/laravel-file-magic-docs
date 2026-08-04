@@ -70,8 +70,16 @@ export default defineConfig({
                   link: '/guide/models-and-exceptions',
                 },
                 {
-                  text: 'Reference',
+                  text: 'Performance and security',
+                  link: '/guide/performance-and-security',
+                },
+                {
+                  text: 'API reference',
                   link: '/guide/reference',
+                },
+                {
+                  text: 'Troubleshooting',
+                  link: '/guide/troubleshooting',
                 },
               ],
             },
@@ -150,8 +158,16 @@ export default defineConfig({
                   link: '/zh-TW/guide/models-and-exceptions',
                 },
                 {
-                  text: '參考資料',
+                  text: '效能與安全',
+                  link: '/zh-TW/guide/performance-and-security',
+                },
+                {
+                  text: 'API 參考',
                   link: '/zh-TW/guide/reference',
+                },
+                {
+                  text: '常見問題',
+                  link: '/zh-TW/guide/troubleshooting',
                 },
               ],
             },

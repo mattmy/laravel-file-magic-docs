@@ -1,163 +1,222 @@
-# Reference
+# API reference
 
-## Testing
+This page lists the methods and fields used by Laravel applications. Each section links to
+the guide with full examples and behavior.
 
-```php
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Mattmy\FileMagic\Facades\FileMagic;
-
-Storage::fake('documents');
-
-$file = FileMagic::fromUpload(
-    UploadedFile::fake()->createWithContent('notes.txt', 'hello'),
-)->onDisk('documents')->store();
-
-Storage::disk('documents')->assertExists($file->path);
-
-expect($file->contents())->toBe('hello');
-```
-
-Use `RefreshDatabase` for database assertions and load the published migration.
-
-
-## Performance
-
-- Uploads and paths are inspected and stored with streams.
-- Checksums are calculated in chunks.
-- `contents()` loads everything into memory; prefer `readStream()` for large files.
-- Base64 necessarily uses additional memory.
-- Image decoding may consume far more memory than the compressed file size.
-- `Overwrite` creates a full local temporary backup of the existing object and performs additional I/O; prefer `Unique` when a fixed path is unnecessary.
-- ZIP downloads use local temporary disk space up to the uncompressed source size plus the archive size.
-- URL imports perform one synchronous streaming GET and use local temporary disk up to the downloaded size.
-- Set URL connection and total timeouts for the reliability needs of the calling workflow.
-- Use `find()` for batch lookup and call `FileQuery::delete()` for batch deletion.
-
-
-## Security
-
-- Authorize every store, read, download, and delete operation.
-- Keep Laravel request validation in front of the package.
-- Treat original names and client MIME values as untrusted metadata.
-- Prefer MIME allowlists for sensitive workflows.
-- Consider blocking HTML and SVG when serving from the same origin.
-- Keep private files on private disks and use short-lived temporary URLs.
-- Never pass a user-controlled server path to `fromPath()`.
-- Ensure the PHP system temporary directory has appropriate permissions and capacity before enabling `Overwrite` for sensitive or large files.
-- Authorize every file in a ZIP download before passing its targets to FileMagic.
-- Configure web-server request limits in addition to `max_size`.
-- Add antivirus scanning when required by the threat model.
-- URL imports verify TLS by default and reject HTTP unless explicitly enabled.
-- URL imports block SSRF targets and revalidate every redirect; keep an outbound firewall as defense in depth.
-- Keep downloaded HTML and other active content private and serve untrusted files as attachments with `nosniff`.
-
-
-## API reference
-
-### `FileMagic`
+## Create a pending file
 
 ```php
-fromUpload(UploadedFile $file): PendingFile
-fromPath(string $path): PendingFile
-fromUrl(string $url, ?RemoteFileOptions $options = null): PendingFile
-fromContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
-fromBase64(string $base64, ?string $originalFilename = null): PendingFile
-text(string $text): PendingFile
-json(array|\JsonSerializable $data): PendingFile
-csv(iterable $rows): PendingFile
-find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+FileMagic::fromUpload(UploadedFile $file): PendingFile
+FileMagic::fromPath(string $path): PendingFile
+FileMagic::fromContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
+FileMagic::fromBase64(string $base64, ?string $originalFilename = null): PendingFile
+FileMagic::fromUrl(string $url, ?RemoteFileOptions $options = null): PendingFile
+FileMagic::text(string $text): PendingFile
+FileMagic::json(array|JsonSerializable $data): PendingFile
+FileMagic::csv(iterable $rows): PendingFile
 ```
 
-### `PendingFile`
+- `fromUpload()` accepts a Laravel uploaded file.
+- `fromPath()` accepts a readable local path chosen by the application.
+- `fromContent()` accepts text or binary content. `$originalFilename` and `$mimeType` are
+  optional source details; the stored type is determined from the content.
+- `fromBase64()` accepts Base64 text or a Base64 Data URI.
+- `fromUrl()` downloads an HTTP(S) file. `$options` changes the rules for this download.
+- `text()`, `json()`, and `csv()` create content that can be stored like any other file.
+
+All methods return `PendingFile`. See [Storing files](/guide/storing-files),
+[Remote files](/guide/remote-files), and [Documents and images](/guide/documents-and-images).
+
+## Configure and store a pending file
 
 ```php
-onDisk(string $disk): self
-inDirectory(string $directory): self
-named(string|int $filename): self
-visibility(FileVisibility $visibility): self
-onCollision(CollisionPolicy $policy): self
-maxSize(int $bytes): self
-allowMimeTypes(array $mimeTypes): self
-blockMimeTypes(array $mimeTypes): self
-withMetadata(array $metadata): self
-ownedBy(Model $owner): self
-resizeImage(?int $maxWidth = null, ?int $quality = null): self
-store(): StoredFile
+$pending->onDisk(string $disk): self
+$pending->inDirectory(string $directory): self
+$pending->named(string|int $filename): self
+$pending->visibility(FileVisibility $visibility): self
+$pending->onCollision(CollisionPolicy $policy): self
+$pending->maxSize(int $bytes): self
+$pending->allowMimeTypes(array $mimeTypes): self
+$pending->blockMimeTypes(array $mimeTypes): self
+$pending->withMetadata(array $metadata): self
+$pending->ownedBy(Model $owner): self
+$pending->resizeImage(?int $maxWidth = null, ?int $quality = null): self
+$pending->store(): StoredFile
 ```
 
-### `FileQuery`
+- `onDisk()` selects a Laravel Filesystem disk.
+- `inDirectory()` selects a relative directory on that disk.
+- `named()` selects a filename without its extension.
+- `visibility()` selects `FileVisibility::Private` or `FileVisibility::Public`.
+- `onCollision()` selects `Unique`, `Error`, or `Overwrite` when the path already exists.
+- `maxSize()` sets the maximum accepted bytes for this file.
+- `allowMimeTypes()` accepts only the supplied MIME types for this file.
+- `blockMimeTypes()` rejects the supplied MIME types for this file.
+- `withMetadata()` saves application data in the file record's `metadata` field.
+- `ownedBy()` associates the file with a saved Eloquent model.
+- `resizeImage()` sets the maximum width and output quality for supported images. A `null`
+  parameter uses its configured default.
+- `store()` saves the physical file and returns its `StoredFile` record.
+
+The following methods return the choices currently set on a `PendingFile`. A value is `null`
+when that option has not been set and the package default will be used by `store()`.
 
 ```php
-one(): ?StoredFile
-get(): Collection
-urls(): Collection
-exists(): bool
-url(): string
-temporaryUrl(?DateTimeInterface $expiration = null): string
-contents(): string
-readStream(): resource
-download(?string $name = null): StreamedResponse
-downloadZip(?string $name = null): BinaryFileResponse
-delete(): int
+$pending->source(): FileSource
+$pending->disk(): ?string
+$pending->directory(): ?string
+$pending->filename(): ?string
+$pending->fileVisibility(): ?FileVisibility
+$pending->collisionPolicy(): ?CollisionPolicy
+$pending->maximumSize(): ?int
+$pending->allowedMimeTypes(): ?array
+$pending->blockedMimeTypes(): ?array
+$pending->metadata(): array
+$pending->owner(): ?Model
+$pending->imageOptions(): ?ImageOptions
 ```
 
-`get()` returns `Illuminate\Support\Collection<int, StoredFile>`. Use Laravel Collection methods such as `map()`, `filter()`, `groupBy()`, `pluck()`, and `values()` for in-memory transformations. Keep filesystem-aware batch operations on `FileQuery` by calling `urls()` or `delete()` before discarding the query object.
+`ImageOptions` contains public `maxWidth` and `quality` integer fields.
 
+## Find files
 
-## Troubleshooting
+```php
+FileMagic::find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+```
 
-### MIME differs from the browser value
+`$targets` accepts IDs, UUIDs, existing `StoredFile` models, one-dimensional arrays, and
+Laravel Collections. Multiple target arguments may be mixed. See
+[Querying files](/guide/querying-files).
 
-This is expected. FileMagic trusts content detected with `finfo`.
+```php
+$query->one(): ?StoredFile
+$query->get(): Collection
+$query->urls(): Collection
+$query->exists(): bool
+$query->url(): string
+$query->temporaryUrl(?DateTimeInterface $expiration = null): string
+$query->contents(): string
+$query->readStream(): resource
+$query->download(?string $name = null): StreamedResponse
+$query->downloadZip(?string $name = null): BinaryFileResponse
+$query->delete(): int
+```
 
-### A file gets a `.bin` extension
+- `one()` returns the first matching file record or `null`.
+- `get()` returns all matching records as `Collection<int, StoredFile>`.
+- `urls()` returns public URLs keyed by model key and omits files missing from storage.
+- `exists()` checks whether the first matching physical file exists.
+- `url()` returns the first matching file's public URL.
+- `temporaryUrl()` returns a temporary URL. A `null` expiration uses the configured lifetime.
+- `contents()` returns the complete contents of the first matching file as a string.
+- `readStream()` returns a readable stream for the first matching file; close it after use.
+- `download()` returns a streamed download. `$name` replaces the download filename.
+- `downloadZip()` returns all matching files as a ZIP download. `$name` sets the ZIP filename.
+- `delete()` deletes matching physical files and records, then returns the deleted count.
 
-Symfony Mime has no extension for the detected type. Inspect `mime_type` and decide whether the workflow should allow it.
+Except for `one()` and `get()`, operations that need a first match throw `FileNotFound` when
+no record matches.
 
-### Temporary local URLs fail
+## StoredFile fields
 
-Enable `serve => true` on the local disk or use a driver supporting temporary URLs.
+`StoredFile` is the Eloquent record returned after storage or lookup.
 
-### Image processing is unavailable
+| Field | Type | Data |
+| --- | --- | --- |
+| `id` | `int` | Database key. |
+| `uuid` | `string` | Public unique identifier. |
+| `disk` | `string` | Laravel Filesystem disk. |
+| `path` | `string` | Full path relative to the disk. |
+| `location_hash` | `string` | Identifier for the disk and path combination. |
+| `filename` | `string` | Stored filename without extension. |
+| `original_filename` | `?string` | Original filename when available. |
+| `extension` | `string` | Stored extension. |
+| `mime_type` | `string` | MIME type determined for the file. |
+| `size` | `int` | File size in bytes. |
+| `checksum` | `?string` | File checksum when available. |
+| `visibility` | `FileVisibility` | Public or private storage visibility. |
+| `owner_type`, `owner_id` | `?string` | Polymorphic owner identifiers. |
+| `metadata` | `?array` | Application metadata saved with the file. |
+| `created_at`, `updated_at` | `?Carbon` | Record timestamps. |
+| `owner` | `?Model` | Associated Eloquent model. |
 
-Install `intervention/image`, enable GD or Imagick, and use JPEG, PNG, WebP, or BMP.
+## StoredFile methods
 
-### A physical object was removed externally
+```php
+$file->owner(): MorphTo
+$file->storage(): FilesystemAdapter
+$file->existsOnDisk(): bool
+$file->fullName(): string
+$file->originalName(): string
+$file->url(): string
+$file->temporaryUrl(?DateTimeInterface $expiration = null): string
+$file->contents(): string
+$file->readStream(): resource
+$file->download(?string $name = null): StreamedResponse
+$file->delete(): ?bool
+```
 
-`existsOnDisk()` returns `false`; `contents()` and `readStream()` throw `FileNotFound`.
+- `owner()` provides the Eloquent owner relationship.
+- `storage()` returns the Laravel Filesystem adapter for `disk`.
+- `existsOnDisk()` checks whether `path` exists on the disk.
+- `fullName()` returns `filename` and `extension` together.
+- `originalName()` returns `original_filename`, or `fullName()` when unavailable.
+- URL, content, stream, download, and delete methods operate on this record's physical file.
 
-### A published migration filename contains a timestamp
+## RemoteFileOptions
 
-The service provider adds a timestamp when publishing the migration so Laravel executes it in the expected order. Publish it once per application and commit the generated migration.
+`RemoteFileOptions` changes one `fromUrl()` download. Its public fields are:
 
-### ZIP downloads are unavailable
+| Field | Type | Default | Use |
+| --- | --- | --- | --- |
+| `verifyTls` | `bool` | `true` | Require a valid HTTPS certificate. |
+| `allowHttp` | `bool` | `false` | Allow unencrypted HTTP. |
+| `allowHtml` | `bool` | `false` | Allow HTML and XHTML content. |
+| `connectTimeoutSeconds` | `int` | `5` | Maximum connection time. |
+| `timeoutSeconds` | `int` | `30` | Maximum total download time. |
+| `maxRedirects` | `int` | `3` | Maximum redirects, from `0` to `10`. |
+| `allowedHosts` | `list<string>` | `[]` | Exact host allowlist; empty allows eligible public hosts. |
+| `allowedPorts` | `list<int>` | `[80, 443]` | Allowed destination ports. |
+| `allowedPrivateHosts` | `list<string>` | `[]` | Exact private hosts explicitly allowed. |
 
-Install and enable PHP `ext-zip`. Also ensure the PHP process can write to the system
-temporary directory and that it has enough free space for the source files and archive.
+```php
+RemoteFileOptions::withoutTlsVerification(): RemoteFileOptions
+```
 
-### A normal website URL is rejected
+Use this helper only for controlled environments where certificate verification cannot be
+used. It does not enable HTTP or allow private hosts. See [Remote files](/guide/remote-files).
 
-Web pages are detected as HTML and rejected by default. Use
-`new RemoteFileOptions(allowHtml: true)` only when storing HTML is intentional.
-FileMagic stores allowed HTML as HTML; it never silently converts it to TXT.
+## Enums
 
-### A development HTTPS URL fails certificate verification
+```php
+FileVisibility::Private
+FileVisibility::Public
 
-Fix the certificate whenever possible. For a controlled environment only, pass
-`RemoteFileOptions::withoutTlsVerification()`. This weakens TLS authenticity but
-does not enable HTTP, private networks, arbitrary ports, or unsafe redirects.
+CollisionPolicy::Unique
+CollisionPolicy::Error
+CollisionPolicy::Overwrite
+```
 
+`Unique` changes the filename when the target exists. `Error` rejects the collision.
+`Overwrite` replaces the file while keeping the same storage path.
 
-## License
+## Exception result methods
 
-FileMagic is open-source software licensed under the [MIT License](https://github.com/mattmy/laravel-file-magic/blob/main/LICENSE).
+All package exceptions extend `FileMagicException`. See
+[Models and exceptions](/guide/models-and-exceptions) for the complete list.
 
+```php
+$exception->deletedCount(): int
+$exception->failedCount(): int
+$exception->failedKeys(): array
+```
 
-## Project maintenance
+These `PartialFileDeletion` methods return the completed count, failed count, and model keys
+that still need attention.
 
-- Read [CONTRIBUTING.md](https://github.com/mattmy/laravel-file-magic/blob/main/CONTRIBUTING.md) before submitting a pull request.
-- Report vulnerabilities privately according to [SECURITY.md](https://github.com/mattmy/laravel-file-magic/blob/main/SECURITY.md).
-- Releases follow [Semantic Versioning](https://semver.org/) and are documented
-  in [CHANGELOG.md](https://github.com/mattmy/laravel-file-magic/blob/main/CHANGELOG.md).
+```php
+$exception->operationFailure(): Throwable
+```
 
+`FileRecoveryFailed::operationFailure()` returns the error that caused overwrite recovery to
+start. The exception's previous error contains the recovery failure.

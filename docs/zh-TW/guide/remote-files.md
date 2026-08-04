@@ -2,9 +2,9 @@
 
 ## 從網址儲存檔案
 
-這項選用功能需要 PHP `ext-curl`。建立 `PendingFile` 時仍維持 lazy；若未啟用 cURL，
-呼叫 `store()` 會拋出 `RemoteDownloadUnavailable`。上傳、本機來源、產生文件及
-既有檔案操作仍可使用。可以執行 `php --ri curl` 確認 CLI 環境。
+這項選用功能需要 PHP `ext-curl`。未啟用時，遠端檔案呼叫 `store()` 會拋出
+`RemoteDownloadUnavailable`；上傳、本機來源、產生文件及既有檔案操作仍可使用。
+可以執行 `php --ri curl` 確認 CLI 環境。
 
 `fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。預設只接受
 HTTPS，而且會驗證 TLS certificate：
@@ -37,7 +37,7 @@ https://files.example.com/archive.zip
 
 ### RemoteFileOptions
 
-單次操作需要自訂遠端行為時，傳入 immutable `RemoteFileOptions`：
+單次下載需要不同規則時，傳入 `RemoteFileOptions`：
 
 ```php
 use Mattmy\FileMagic\Data\RemoteFileOptions;
@@ -94,8 +94,8 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-`allowedPorts` 空陣列是無效設定，絕不代表允許全部 port。Host 名單會正規化並精確
-比對。`allowedHosts: []` 只允許通過全部 DNS 與 IP 檢查的 public host；private
+`allowedPorts` 空陣列是無效設定，絕不代表允許全部 port。Host 名單不區分大小寫，
+並使用完整名稱比對。`allowedHosts: []` 只允許通過全部 DNS 與 IP 檢查的 public host；private
 network 仍會被封鎖，除非精確 host 已列在 `allowedPrivateHosts`。
 
 ### TLS 驗證
@@ -150,19 +150,16 @@ script；除非應用程式會隔離並清理內容，否則應保持 private �
 
 ### 網址下載的安全性與效能
 
-FileMagic 會解析全部 A 與 AAAA records，封鎖 loopback、private、link-local、
-reserved、multicast、unspecified 與 cloud metadata address，將驗證過的 IP 固定到
-實際連線，關閉自動 redirect，並對每一跳重新執行完整驗證。`allowedPrivateHosts`
-只用於逐一允許已知內部服務，不提供一次允許所有 private network 的選項。
+FileMagic 會封鎖 local、private、reserved 與 cloud metadata destinations，redirect
+後也會重新檢查。`allowedPrivateHosts` 可以允許指定的已知內部服務，但不會一次允許
+所有 private network destinations。
 
 遠端 response headers 與 URL filename 都是不可信任提示；MIME 與 extension 由下載
 內容判斷。`Content-Length` 可提前拒絕過大回應，但實際串流 bytes 仍一定受到
 `maxSize()` 或全域 `max_size` 限制。
 
-每個 URL 只執行一次 streaming GET。暫存檔會供 inspection、checksum、選用的圖片
-處理與 storage 共用，成功或失敗後都會刪除。此流程不會把完整 response 放入 PHP
-memory，但會占用接近下載檔案大小的本機暫存空間，並在同步下載完成前占用目前的 PHP
-worker。正式環境仍應搭配 outbound firewall 作為額外防線。
+遠端下載會使用接近下載檔案大小的本機暫存空間，完成前也會持續占用目前的 PHP
+worker。大型或緩慢下載建議使用 queue；正式環境仍應搭配 outbound firewall。
 
 儲存完成不代表內容一定無惡意。處理不可信任或高風險來源時，建議使用 private
 visibility、attachment download、MIME allowlist、`X-Content-Type-Options: nosniff`

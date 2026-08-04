@@ -16,12 +16,12 @@ hero:
 features:
   - title: Multiple file sources
     details: Accept uploads, local paths, binary content, Base64, generated documents, and remote HTTP(S) files.
-  - title: Laravel-native workflow
-    details: Store through Laravel Filesystem and persist records with a configurable Eloquent model.
-  - title: Safe by default
-    details: Includes strict validation, SSRF protection, overwrite recovery, and consistent batch deletion.
-  - title: Operational visibility
-    details: Audit database records against storage with explicit cleanup, bounded memory, and predictable exit codes.
+  - title: Built for Laravel
+    details: Use Laravel Filesystem disks and keep searchable file records in Eloquent.
+  - title: Safer file handling
+    details: Limit file types and sizes, protect remote downloads, and recover failed replacements.
+  - title: Find missing files
+    details: Check whether database records still have matching files and optionally remove missing records.
 ---
 
 ## Requirements

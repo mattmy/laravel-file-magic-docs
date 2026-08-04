@@ -1,166 +1,219 @@
-# 參考資料
+# API 參考
 
-## 測試
+這裡列出 Laravel 應用程式會使用的方法與欄位。需要完整範例與行為時，可前往各段落
+提供的說明頁面。
 
-搭配 Laravel fake storage：
-
-```php
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Mattmy\FileMagic\Facades\FileMagic;
-
-Storage::fake('documents');
-
-$file = FileMagic::fromUpload(
-    UploadedFile::fake()->createWithContent('notes.txt', 'hello'),
-)->onDisk('documents')->store();
-
-Storage::disk('documents')->assertExists($file->path);
-
-expect($file->contents())->toBe('hello');
-```
-
-需要進行 database assertion 時，請使用 `RefreshDatabase` 並確保測試環境已載入套件 migration。
-
-
-## 效能注意事項
-
-- Upload 與本機路徑會使用 stream 檢查及儲存。
-- Checksum 會分段計算。
-- `contents()` 會將整個檔案載入記憶體，大型檔案應使用 `readStream()`。
-- Base64 一定會使用額外記憶體。
-- 圖片解碼後的記憶體用量可能遠高於壓縮檔案大小。
-- `Overwrite` 會將完整舊 object 落地到本機暫存硬碟並增加額外 I/O；不需要固定 path 時應優先使用 `Unique`。
-- ZIP 下載會使用本機暫存空間，最高可能同時包含未壓縮來源檔案及 archive。
-- URL 匯入只執行一次同步 streaming GET，並使用最高接近下載檔案大小的本機暫存空間。
-- 應依呼叫流程的可靠性需求設定 URL connect timeout 與 total timeout。
-- 將多個目標一次傳給 `find()`，套件會合併資料庫查詢。
-- 大量查詢應使用 `find()`，大量刪除應使用 `FileQuery::delete()`。
-
-
-## 安全性注意事項
-
-- 每個儲存、讀取、下載及刪除操作都必須先進行 authorization。
-- 在套件前保留 Laravel request validation。
-- 將原始檔名與 client MIME type 視為不可信任的 metadata。
-- 高敏感度上傳流程應採用 MIME type 白名單。
-- 從同一網域提供檔案時，應考慮封鎖 HTML 與 SVG。
-- 私密檔案應放在 private disk，並使用短效 temporary URL。
-- 不要把使用者控制的伺服器路徑直接傳給 `fromPath()`。
-- 對敏感或大型檔案啟用 `Overwrite` 前，確認 PHP 系統暫存目錄的權限及可用容量。
-- ZIP 下載前必須先對每個 target 進行 authorization。
-- 除了 `max_size`，也應設定 Web Server 與 PHP request limit。
-- 威脅模型有需求時，應額外串接防毒掃描服務。
-- URL 匯入預設驗證 TLS，除非明確開啟，否則拒絕 HTTP。
-- URL 匯入封鎖 SSRF target 並重新驗證每個 redirect；正式環境仍應搭配 outbound firewall。
-- 下載的 HTML 與其他 active content 應保持 private，並以 attachment 與 `nosniff` 提供。
-
-
-## API 參考
-
-### `FileMagic`
+## 建立待儲存檔案
 
 ```php
-fromUpload(UploadedFile $file): PendingFile
-fromPath(string $path): PendingFile
-fromUrl(string $url, ?RemoteFileOptions $options = null): PendingFile
-fromContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
-fromBase64(string $base64, ?string $originalFilename = null): PendingFile
-text(string $text): PendingFile
-json(array|\JsonSerializable $data): PendingFile
-csv(iterable $rows): PendingFile
-find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+FileMagic::fromUpload(UploadedFile $file): PendingFile
+FileMagic::fromPath(string $path): PendingFile
+FileMagic::fromContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
+FileMagic::fromBase64(string $base64, ?string $originalFilename = null): PendingFile
+FileMagic::fromUrl(string $url, ?RemoteFileOptions $options = null): PendingFile
+FileMagic::text(string $text): PendingFile
+FileMagic::json(array|JsonSerializable $data): PendingFile
+FileMagic::csv(iterable $rows): PendingFile
 ```
 
-### `PendingFile`
+- `fromUpload()`：接受 Laravel 上傳檔案。
+- `fromPath()`：接受應用程式選擇的可讀本機路徑。
+- `fromContent()`：接受文字或二進位內容。`$originalFilename` 與 `$mimeType` 是選用的
+  來源資訊，儲存類型仍以內容為準。
+- `fromBase64()`：接受 Base64 文字或 Base64 Data URI。
+- `fromUrl()`：下載 HTTP(S) 檔案；`$options` 可調整這次下載的規則。
+- `text()`、`json()`、`csv()`：產生可以像一般檔案一樣儲存的內容。
+
+以上方法都回傳 `PendingFile`。完整說明請看[儲存檔案](/zh-TW/guide/storing-files)、
+[遠端檔案](/zh-TW/guide/remote-files)及[文件與圖片](/zh-TW/guide/documents-and-images)。
+
+## 設定並儲存 PendingFile
 
 ```php
-onDisk(string $disk): self
-inDirectory(string $directory): self
-named(string|int $filename): self
-visibility(FileVisibility $visibility): self
-onCollision(CollisionPolicy $policy): self
-maxSize(int $bytes): self
-allowMimeTypes(array $mimeTypes): self
-blockMimeTypes(array $mimeTypes): self
-withMetadata(array $metadata): self
-ownedBy(Model $owner): self
-resizeImage(?int $maxWidth = null, ?int $quality = null): self
-store(): StoredFile
+$pending->onDisk(string $disk): self
+$pending->inDirectory(string $directory): self
+$pending->named(string|int $filename): self
+$pending->visibility(FileVisibility $visibility): self
+$pending->onCollision(CollisionPolicy $policy): self
+$pending->maxSize(int $bytes): self
+$pending->allowMimeTypes(array $mimeTypes): self
+$pending->blockMimeTypes(array $mimeTypes): self
+$pending->withMetadata(array $metadata): self
+$pending->ownedBy(Model $owner): self
+$pending->resizeImage(?int $maxWidth = null, ?int $quality = null): self
+$pending->store(): StoredFile
 ```
 
-### `FileQuery`
+- `onDisk()`：選擇 Laravel Filesystem disk。
+- `inDirectory()`：選擇 disk 內的相對目錄。
+- `named()`：設定不含副檔名的檔名。
+- `visibility()`：選擇 `FileVisibility::Private` 或 `FileVisibility::Public`。
+- `onCollision()`：路徑已存在時選擇 `Unique`、`Error` 或 `Overwrite`。
+- `maxSize()`：設定這個檔案可接受的最大 bytes。
+- `allowMimeTypes()`：這個檔案只接受指定 MIME types。
+- `blockMimeTypes()`：這個檔案拒絕指定 MIME types。
+- `withMetadata()`：將應用程式資料儲存在檔案紀錄的 `metadata` 欄位。
+- `ownedBy()`：將檔案關聯至已儲存的 Eloquent Model。
+- `resizeImage()`：設定支援圖片的最大寬度與輸出品質；參數為 `null` 時使用設定預設值。
+- `store()`：儲存實體檔案並回傳 `StoredFile` 紀錄。
+
+以下方法會回傳 `PendingFile` 目前設定的選項。回傳 `null` 代表尚未單獨設定，
+`store()` 會使用套件預設值。
 
 ```php
-one(): ?StoredFile
-get(): Collection
-urls(): Collection
-exists(): bool
-url(): string
-temporaryUrl(?DateTimeInterface $expiration = null): string
-contents(): string
-readStream(): resource
-download(?string $name = null): StreamedResponse
-downloadZip(?string $name = null): BinaryFileResponse
-delete(): int
+$pending->source(): FileSource
+$pending->disk(): ?string
+$pending->directory(): ?string
+$pending->filename(): ?string
+$pending->fileVisibility(): ?FileVisibility
+$pending->collisionPolicy(): ?CollisionPolicy
+$pending->maximumSize(): ?int
+$pending->allowedMimeTypes(): ?array
+$pending->blockedMimeTypes(): ?array
+$pending->metadata(): array
+$pending->owner(): ?Model
+$pending->imageOptions(): ?ImageOptions
 ```
 
-`get()` 回傳 `Illuminate\Support\Collection<int, StoredFile>`，可直接使用 `map()`、`filter()`、`groupBy()`、`pluck()`、`values()` 等 Laravel Collection 方法。涉及檔案系統的批次行為仍應保留在 `FileQuery`，請在捨棄 query 物件前呼叫 `urls()` 或 `delete()`。
+`ImageOptions` 提供 public integer 欄位 `maxWidth` 與 `quality`。
 
+## 尋找檔案
 
-## 常見問題
+```php
+FileMagic::find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+```
 
-### MIME type 與瀏覽器提供的值不同
+`$targets` 可使用 ID、UUID、已存在的 `StoredFile` Model、一維 array 及 Laravel
+Collection，也能同時傳入多個不同類型的 targets。完整說明請看
+[查詢檔案](/zh-TW/guide/querying-files)。
 
-這是正常行為。FileMagic 信任 `finfo` 根據檔案內容偵測的結果，而不是瀏覽器提供的 MIME type。
+```php
+$query->one(): ?StoredFile
+$query->get(): Collection
+$query->urls(): Collection
+$query->exists(): bool
+$query->url(): string
+$query->temporaryUrl(?DateTimeInterface $expiration = null): string
+$query->contents(): string
+$query->readStream(): resource
+$query->download(?string $name = null): StreamedResponse
+$query->downloadZip(?string $name = null): BinaryFileResponse
+$query->delete(): int
+```
 
-### 檔案被指定為 `.bin`
+- `one()`：回傳第一筆符合的檔案紀錄，找不到時為 `null`。
+- `get()`：以 `Collection<int, StoredFile>` 回傳全部符合的紀錄。
+- `urls()`：回傳以 Model key 為索引的公開 URL；storage 上不存在的檔案會省略。
+- `exists()`：確認第一筆符合的實體檔案是否存在。
+- `url()`：取得第一筆符合檔案的公開 URL。
+- `temporaryUrl()`：取得 temporary URL；`$expiration` 為 `null` 時使用設定的有效時間。
+- `contents()`：以 string 取得第一筆符合檔案的完整內容。
+- `readStream()`：取得第一筆符合檔案的 readable stream；使用完畢後必須關閉。
+- `download()`：回傳 stream download；`$name` 可取代下載檔名。
+- `downloadZip()`：將全部符合檔案回傳為 ZIP download；`$name` 設定 ZIP 檔名。
+- `delete()`：刪除符合的實體檔案與紀錄，回傳完成刪除的數量。
 
-Symfony Mime 找不到偵測到的 MIME type 所對應的副檔名。請檢查紀錄中的 `mime_type`，再決定該工作流程是否應允許這種檔案。
+除了 `one()` 與 `get()`，需要第一筆結果的方法在找不到紀錄時會拋出 `FileNotFound`。
 
-### 本機 temporary URL 無法使用
+## StoredFile 欄位
 
-在 Laravel local disk 啟用 `serve => true`，或改用支援 temporary URL 的 driver。
+`StoredFile` 是儲存或查詢完成後取得的 Eloquent 紀錄。
 
-### 圖片處理拋出 `ImageProcessingUnavailable`
+| 欄位 | 型別 | 資料 |
+| --- | --- | --- |
+| `id` | `int` | Database key。 |
+| `uuid` | `string` | 對外使用的唯一識別碼。 |
+| `disk` | `string` | Laravel Filesystem disk。 |
+| `path` | `string` | 相對於 disk 的完整路徑。 |
+| `location_hash` | `string` | Disk 與 path 組合的識別值。 |
+| `filename` | `string` | 不含副檔名的儲存檔名。 |
+| `original_filename` | `?string` | 有提供時的原始檔名。 |
+| `extension` | `string` | 儲存副檔名。 |
+| `mime_type` | `string` | 檔案的 MIME type。 |
+| `size` | `int` | 檔案 bytes。 |
+| `checksum` | `?string` | 有提供時的 checksum。 |
+| `visibility` | `FileVisibility` | Public 或 private visibility。 |
+| `owner_type`, `owner_id` | `?string` | Polymorphic owner identifiers。 |
+| `metadata` | `?array` | 與檔案一同儲存的應用程式資料。 |
+| `created_at`, `updated_at` | `?Carbon` | 紀錄時間。 |
+| `owner` | `?Model` | 關聯的 Eloquent Model。 |
 
-安裝 `intervention/image` 並啟用 GD 或 Imagick。非圖片與不支援格式會自動略過圖片處理，不會拋出此例外。
+## StoredFile 方法
 
-### 實體檔案被外部系統移除
+```php
+$file->owner(): MorphTo
+$file->storage(): FilesystemAdapter
+$file->existsOnDisk(): bool
+$file->fullName(): string
+$file->originalName(): string
+$file->url(): string
+$file->temporaryUrl(?DateTimeInterface $expiration = null): string
+$file->contents(): string
+$file->readStream(): resource
+$file->download(?string $name = null): StreamedResponse
+$file->delete(): ?bool
+```
 
-`existsOnDisk()` 會回傳 `false`；`contents()` 與 `readStream()` 會拋出 `FileNotFound`。外部 storage 變更應由應用程式專用的維護流程進行同步。
+- `owner()`：提供 Eloquent owner relationship。
+- `storage()`：取得 `disk` 對應的 Laravel Filesystem adapter。
+- `existsOnDisk()`：確認 `path` 是否存在於 disk。
+- `fullName()`：取得 `filename` 與 `extension` 組成的完整檔名。
+- `originalName()`：取得 `original_filename`；沒有原始檔名時回傳 `fullName()`。
+- URL、內容、stream、下載及刪除方法會操作這筆紀錄對應的實體檔案。
 
-### 發佈 migration 後檔名包含時間
+## RemoteFileOptions
 
-Service Provider 會為發佈的 migration 加上 timestamp，確保 Laravel 按正確順序執行。每個專案只需發佈一次，並將產生的 migration 納入版本控制。
+`RemoteFileOptions` 用來調整單次 `fromUrl()` 下載，提供以下 public 欄位：
 
-### ZIP 下載功能無法使用
+| 欄位 | 型別 | 預設 | 用途 |
+| --- | --- | --- | --- |
+| `verifyTls` | `bool` | `true` | 要求有效的 HTTPS certificate。 |
+| `allowHttp` | `bool` | `false` | 允許未加密 HTTP。 |
+| `allowHtml` | `bool` | `false` | 允許 HTML 與 XHTML 內容。 |
+| `connectTimeoutSeconds` | `int` | `5` | 最長連線時間。 |
+| `timeoutSeconds` | `int` | `30` | 最長完整下載時間。 |
+| `maxRedirects` | `int` | `3` | 最多 redirect 次數，範圍 `0` 至 `10`。 |
+| `allowedHosts` | `list<string>` | `[]` | 精確 host allowlist；空陣列允許符合條件的 public hosts。 |
+| `allowedPorts` | `list<int>` | `[80, 443]` | 允許的連線 ports。 |
+| `allowedPrivateHosts` | `list<string>` | `[]` | 明確允許的 private hosts。 |
 
-請安裝並啟用 PHP `ext-zip`，同時確認 PHP process 可以寫入系統暫存目錄，且暫存
-空間足以容納來源檔案及 ZIP archive。
+```php
+RemoteFileOptions::withoutTlsVerification(): RemoteFileOptions
+```
 
-### 一般官網網址被拒絕
+只有無法驗證 certificate 的受控環境才使用此 helper。它不會開啟 HTTP，也不會允許
+private hosts。完整說明請看[遠端檔案](/zh-TW/guide/remote-files)。
 
-網頁會偵測為 HTML 並預設拒絕。只有確實要保存 HTML 時，才使用
-`new RemoteFileOptions(allowHtml: true)`。FileMagic 會將允許的內容保存為 HTML，
-不會靜默轉換為 TXT。
+## Enums
 
-### 開發環境的 HTTPS certificate 驗證失敗
+```php
+FileVisibility::Private
+FileVisibility::Public
 
-應優先修正 certificate。只有受控環境可傳入
-`RemoteFileOptions::withoutTlsVerification()`。這會降低 TLS authenticity，但不會
-開啟 HTTP、private network、任意 port 或不安全 redirect。
+CollisionPolicy::Unique
+CollisionPolicy::Error
+CollisionPolicy::Overwrite
+```
 
+`Unique` 在目標存在時更換檔名，`Error` 拒絕檔名碰撞，`Overwrite` 取代檔案並保持
+相同 storage path。
 
-## 授權
+## 例外結果方法
 
-FileMagic 是使用 [MIT License](https://github.com/mattmy/laravel-file-magic/blob/main/LICENSE) 發佈的開源軟體。
+所有套件例外都繼承 `FileMagicException`。完整清單請看
+[Model 與例外](/zh-TW/guide/models-and-exceptions)。
 
+```php
+$exception->deletedCount(): int
+$exception->failedCount(): int
+$exception->failedKeys(): array
+```
 
-## 專案維護
+`PartialFileDeletion` 的這些方法會取得完成數量、失敗數量，以及仍需處理的 Model keys。
 
-- 提交 Pull Request 前請閱讀 [CONTRIBUTING.md](https://github.com/mattmy/laravel-file-magic/blob/main/CONTRIBUTING.md)。
-- 安全性問題請依照 [SECURITY.md](https://github.com/mattmy/laravel-file-magic/blob/main/SECURITY.md) 私下回報。
-- 發布版本遵守 [Semantic Versioning](https://semver.org/)，變更內容記錄於
-  [CHANGELOG.md](https://github.com/mattmy/laravel-file-magic/blob/main/CHANGELOG.md)。
+```php
+$exception->operationFailure(): Throwable
+```
 
+`FileRecoveryFailed::operationFailure()` 會取得觸發 Overwrite 還原的原始錯誤；
+exception 的 previous error 則是還原失敗原因。

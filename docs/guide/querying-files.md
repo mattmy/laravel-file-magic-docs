@@ -40,15 +40,16 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-All three forms preserve input order and remove duplicate models. IDs and UUIDs are fetched in one query; model targets are reused without querying. Empty arrays and Collections return an empty `Illuminate\Support\Collection` without a query.
+All three forms preserve input order and remove duplicate models. Existing model targets are
+used directly. Empty arrays and Collections return an empty `Illuminate\Support\Collection`.
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
 
 Valid IDs and UUIDs without a matching record are omitted. `one()` therefore returns
 the first resolved `StoredFile` or `null`, while operations that require a file,
 such as `download()` and `contents()`, throw `FileNotFound` when nothing resolves.
-`get()` returns an `Illuminate\Support\Collection<int, StoredFile>`, so the complete
-Laravel Collection API is available without exposing an Eloquent query builder.
+`get()` returns an `Illuminate\Support\Collection<int, StoredFile>`, so you can use normal
+Laravel Collection methods such as `map()`, `filter()`, and `pluck()`.
 
 
 ## URLs

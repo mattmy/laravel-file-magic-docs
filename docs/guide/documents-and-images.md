@@ -40,7 +40,9 @@ $file = FileMagic::csv([
 
 Associative rows use the first row's keys as a header. List rows do not generate a header. Every row must use the same keys in the same order, and every value must be scalar or `null`. CSV uses UTF-8 without a BOM, comma delimiters, double-quote enclosures, and CRLF line endings.
 
-All three methods return the normal `PendingFile`, so disk, directory, filename, visibility, collision, owner, metadata, MIME, and size options remain available. A `PendingFile` is always persisted with `store()`; it has no `storage()`, `toTxt()`, `toJson()`, or `toCsv()` aliases. Stored documents use the normal `StoredFile` and `FileQuery` APIs.
+All three methods return `PendingFile`, so disk, directory, filename, visibility, collision,
+owner, metadata, MIME, and size options remain available. Call `store()` to save the document;
+the result is a normal `StoredFile` that works with every `FileQuery` operation.
 
 Invalid UTF-8, JSON values that cannot be encoded, and inconsistent CSV rows throw `InvalidDocumentData`.
 

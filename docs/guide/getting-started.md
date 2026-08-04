@@ -9,9 +9,8 @@ FileMagic is a file-management package built exclusively for Laravel.
 - PHP `ext-fileinfo`
 - A configured Laravel Filesystem disk
 
-Composer checks `ext-fileinfo` during installation because FileMagic detects
-MIME types from actual file contents instead of trusting filenames or
-client-provided MIME types.
+FileMagic uses `ext-fileinfo` to determine the stored file type. The filename and MIME type
+reported by the client are not used as proof of the file's type.
 
 Remote HTTP(S) imports through `fromUrl()` additionally need PHP `ext-curl`.
 Without it, all other features remain available, while storing a remote source
@@ -30,17 +29,6 @@ php artisan vendor:publish --tag=file-magic-config
 php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate
 ```
-
-Laravel auto-discovers `Mattmy\FileMagic\FileMagicServiceProvider` and the `FileMagic` facade. If discovery is disabled, register the provider manually in `bootstrap/providers.php`:
-
-```php
-use Mattmy\FileMagic\FileMagicServiceProvider;
-
-return [
-    FileMagicServiceProvider::class,
-];
-```
-
 
 ## Configuration
 
@@ -116,9 +104,9 @@ FILE_MAGIC_VISIBILITY=private
 ```
 
 
-## Core workflow
+## Store your first file
 
-FileMagic operations follow three stages:
+Storing a file takes three steps:
 
 1. Create a `PendingFile` with `fromUpload()`, `fromPath()`, `fromUrl()`, `fromContent()`, `fromBase64()`, `text()`, `json()`, or `csv()`.
 2. Configure storage with methods such as `onDisk()`, `inDirectory()`, `named()`, and `visibility()`.
