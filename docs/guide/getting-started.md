@@ -1,13 +1,19 @@
 # Getting started
 
-FileMagic is a file-management package built exclusively for Laravel.
+FileMagic gives Laravel applications one workflow for accepting, storing, finding, downloading,
+and deleting files. Store an upload to a Filesystem disk and receive a searchable Eloquent record.
 
 ## Requirements
 
-- PHP 8.3 or later
-- Laravel 12 or 13
-- PHP `ext-fileinfo`
-- A configured Laravel Filesystem disk
+| Requirement | Supported versions |
+| --- | --- |
+| PHP | 8.3–8.x |
+| Laravel | 12 or 13 |
+| PHP extension | `ext-fileinfo` |
+
+These versions come from the package's Composer constraints. CI tests every Laravel 12 and 13
+combination on PHP 8.3, 8.4, and 8.5. You also need a configured Laravel Filesystem disk and a
+database supported by Laravel.
 
 FileMagic uses `ext-fileinfo` to determine the stored file type. The filename and MIME type
 reported by the client are not used as proof of the file's type.
@@ -25,111 +31,56 @@ or Imagick. ZIP downloads additionally need PHP `ext-zip`.
 
 ```bash
 composer require mattmy/laravel-file-magic
-php artisan vendor:publish --tag=file-magic-config
 php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate
 ```
 
 ## Configuration
 
-The published `config/file-magic.php` contains:
+FileMagic works with its defaults after the migration is published and run. By default, it stores
+private files in the `files` directory on `FILESYSTEM_DISK`, limits files to 100 MiB, and gives
+colliding filenames a unique suffix.
+
+Publish the configuration only when you need to change these defaults:
+
+```bash
+php artisan vendor:publish --tag=file-magic-config
+```
+
+See [Configuration](/guide/configuration) for every option and environment override.
+
+## Quick start
+
+Add this route to `routes/web.php`. It validates an uploaded document, stores it with the default
+settings, and returns the new record's ID, UUID, and detected MIME type as JSON.
 
 ```php
-<?php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Mattmy\FileMagic\Facades\FileMagic;
 
-declare(strict_types=1);
+Route::post('/documents', function (Request $request): array {
+    $input = $request->validate([
+        'document' => ['required', 'file'],
+    ]);
 
-return [
-    'disk' => \env('FILE_MAGIC_DISK', \env('FILESYSTEM_DISK', 'local')),
-    'directory' => \env('FILE_MAGIC_DIRECTORY', 'files'),
-    'visibility' => \env('FILE_MAGIC_VISIBILITY', 'private'),
-    'max_size' => 100 * 1024 * 1024,
-    'allowed_mime_types' => [],
-    'blocked_mime_types' => [
-        'application/x-httpd-php',
-        'application/x-php',
-    ],
-    'collision' => 'unique',
-    'checksum_algorithm' => 'sha256',
-    'temporary_url_ttl' => 5,
-    'model' => Mattmy\FileMagic\Models\StoredFile::class,
-    'table' => 'stored_files',
-    'image' => [
-        'quality' => 80,
-        'max_width' => 1920,
-    ],
-    'zip' => [
-        'max_files' => 100,
-        'max_size' => 1024 * 1024 * 1024,
-    ],
-    'remote' => [
-        'connect_timeout' => 5,
-        'timeout' => 30,
-        'max_redirects' => 3,
-        'allowed_hosts' => [],
-        'allowed_ports' => [80, 443],
-    ],
-];
+    $file = FileMagic::fromUpload($input['document'])->store();
+
+    return [
+        'id' => $file->id,
+        'uuid' => $file->uuid,
+        'mime_type' => $file->mime_type,
+    ];
+});
 ```
 
-| Option | Purpose |
-| --- | --- |
-| `disk` | Default Filesystem disk |
-| `directory` | Default relative storage directory |
-| `visibility` | `private` or `public` |
-| `max_size` | Maximum detected size in bytes |
-| `allowed_mime_types` | MIME allowlist; empty allows every non-blocked type |
-| `blocked_mime_types` | MIME types rejected in every default operation |
-| `collision` | `unique`, `error`, or `overwrite` |
-| `checksum_algorithm` | PHP hash algorithm; invalid values fall back to `sha256` |
-| `temporary_url_ttl` | Default temporary URL lifetime in minutes |
-| `model` | Class extending `StoredFile` |
-| `table` | File-record table |
-| `image.quality` | Default image output quality |
-| `image.max_width` | Default maximum image width |
-| `zip.max_files` | Maximum files in one ZIP download |
-| `zip.max_size` | Maximum uncompressed source bytes in one ZIP download |
-| `remote.connect_timeout` | Default connection timeout in seconds |
-| `remote.timeout` | Default total download timeout in seconds |
-| `remote.max_redirects` | Default redirect limit from `0` to `10` |
-| `remote.allowed_hosts` | Exact public-host allowlist; empty permits public hosts that pass SSRF validation |
-| `remote.allowed_ports` | Non-empty port allowlist; defaults to standard HTTP and HTTPS ports |
+The source method and `store()` are the only required calls. Methods between them can override
+storage, naming, validation, ownership, and image options for that file.
 
-Environment overrides:
+## Next steps
 
-```dotenv
-FILE_MAGIC_DISK=s3
-FILE_MAGIC_DIRECTORY=uploads
-FILE_MAGIC_VISIBILITY=private
-```
-
-
-## Store your first file
-
-Storing a file takes three steps:
-
-1. Create a `PendingFile` with `fromUpload()`, `fromPath()`, `fromUrl()`, `fromContent()`, `fromBase64()`, `text()`, `json()`, or `csv()`.
-2. Configure storage with methods such as `onDisk()`, `inDirectory()`, `named()`, and `visibility()`.
-3. Call `store()` to persist the physical file and its database record.
-
-```php
-$file = FileMagic::fromUpload($uploadedFile)
-    ->onDisk('local')
-    ->inDirectory('documents')
-    ->named('contract')
-    ->store();
-```
-
-Only the source method and `store()` are required. Every configuration method in between is optional.
-
-| Goal | Methods |
-| --- | --- |
-| Create a pending file | `fromUpload()`, `fromPath()`, `fromUrl()`, `fromContent()`, `fromBase64()` |
-| Generate a document | `text()`, `json()`, `csv()` |
-| Choose storage | `onDisk()`, `inDirectory()` |
-| Choose a filename | `named()` |
-| Persist the file | `store()` |
-| Find and operate on stored files | `find()` |
-| Download multiple files as ZIP | `find()->downloadZip()` |
-
+- [Store uploads, local files, content, and Base64](/guide/storing-files)
+- [Import remote HTTP(S) files safely](/guide/remote-files)
+- [Query, read, and download stored files](/guide/querying-files)
+- [Look up every application-facing method and field](/guide/reference)
 

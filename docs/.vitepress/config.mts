@@ -42,6 +42,10 @@ export default defineConfig({
                   link: '/guide/getting-started',
                 },
                 {
+                  text: 'Configuration',
+                  link: '/guide/configuration',
+                },
+                {
                   text: 'Storing files',
                   link: '/guide/storing-files',
                 },
@@ -128,6 +132,10 @@ export default defineConfig({
                 {
                   text: '開始使用',
                   link: '/zh-TW/guide/getting-started',
+                },
+                {
+                  text: '設定參考',
+                  link: '/zh-TW/guide/configuration',
                 },
                 {
                   text: '儲存檔案',

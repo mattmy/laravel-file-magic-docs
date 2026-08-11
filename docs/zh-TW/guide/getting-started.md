@@ -1,13 +1,19 @@
 # 開始使用
 
-FileMagic 是一個專為 Laravel 設計的檔案管理套件。
+FileMagic 讓 Laravel 應用程式能用同一套流程接收、儲存、查詢、下載與刪除檔案。
+儲存上傳檔案後，會得到一筆可透過 Eloquent 查詢的檔案紀錄。
 
 ## 系統需求
 
-- PHP 8.3 或以上
-- Laravel 12 或 13
-- PHP `ext-fileinfo`
-- 至少一個已設定完成的 Laravel Filesystem disk
+| 需求 | 支援版本 |
+| --- | --- |
+| PHP | 8.3–8.x |
+| Laravel | 12 或 13 |
+| PHP extension | `ext-fileinfo` |
+
+以上版本來自套件的 Composer constraints。CI 會在 PHP 8.3、8.4、8.5 分別測試
+Laravel 12 與 13。應用程式還需要至少一個設定完成的 Laravel Filesystem disk，以及
+Laravel 支援的 database。
 
 FileMagic 使用 `ext-fileinfo` 取得儲存檔案的類型。Client 回報的檔名與 MIME type
 不能用來證明檔案的實際類型。
@@ -32,12 +38,6 @@ ZIP 批次下載另外需要 PHP `ext-zip`。
 composer require mattmy/laravel-file-magic
 ```
 
-發佈設定檔：
-
-```bash
-php artisan vendor:publish --tag=file-magic-config
-```
-
 發佈並執行 migration：
 
 ```bash
@@ -47,104 +47,50 @@ php artisan migrate
 
 ## 設定
 
-發佈後的 `config/file-magic.php` 內容如下：
+發佈並執行 migration 後，FileMagic 可以直接使用預設設定。預設會在
+`FILESYSTEM_DISK` 的 `files` 目錄儲存 private 檔案、限制檔案大小為 100 MiB，並在
+檔名碰撞時加入不重複的 suffix。
+
+只有需要調整預設值時才需發佈設定檔：
+
+```bash
+php artisan vendor:publish --tag=file-magic-config
+```
+
+所有選項與環境變數請參考[設定參考](/zh-TW/guide/configuration)。
+
+## 快速開始
+
+將以下 route 加入 `routes/web.php`。它會先驗證上傳的文件，再使用預設設定儲存，最後
+以 JSON 回傳新紀錄的 ID、UUID 與偵測到的 MIME type。
 
 ```php
-<?php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Mattmy\FileMagic\Facades\FileMagic;
 
-declare(strict_types=1);
+Route::post('/documents', function (Request $request): array {
+    $input = $request->validate([
+        'document' => ['required', 'file'],
+    ]);
 
-return [
-    'disk' => \env('FILE_MAGIC_DISK', \env('FILESYSTEM_DISK', 'local')),
-    'directory' => \env('FILE_MAGIC_DIRECTORY', 'files'),
-    'visibility' => \env('FILE_MAGIC_VISIBILITY', 'private'),
-    'max_size' => 100 * 1024 * 1024,
-    'allowed_mime_types' => [],
-    'blocked_mime_types' => [
-        'application/x-httpd-php',
-        'application/x-php',
-    ],
-    'collision' => 'unique',
-    'checksum_algorithm' => 'sha256',
-    'temporary_url_ttl' => 5,
-    'model' => Mattmy\FileMagic\Models\StoredFile::class,
-    'table' => 'stored_files',
-    'image' => [
-        'quality' => 80,
-        'max_width' => 1920,
-    ],
-    'zip' => [
-        'max_files' => 100,
-        'max_size' => 1024 * 1024 * 1024,
-    ],
-    'remote' => [
-        'connect_timeout' => 5,
-        'timeout' => 30,
-        'max_redirects' => 3,
-        'allowed_hosts' => [],
-        'allowed_ports' => [80, 443],
-    ],
-];
+    $file = FileMagic::fromUpload($input['document'])->store();
+
+    return [
+        'id' => $file->id,
+        'uuid' => $file->uuid,
+        'mime_type' => $file->mime_type,
+    ];
+});
 ```
 
-| 設定 | 用途 |
-| --- | --- |
-| `disk` | 預設的 Filesystem disk |
-| `directory` | 預設的相對儲存目錄 |
-| `visibility` | `private` 或 `public` |
-| `max_size` | 偵測後允許的最大檔案大小，單位為 bytes |
-| `allowed_mime_types` | MIME type 白名單；空陣列代表允許所有未被封鎖的類型 |
-| `blocked_mime_types` | 預設一律拒絕的 MIME type |
-| `collision` | 檔名碰撞策略：`unique`、`error` 或 `overwrite` |
-| `checksum_algorithm` | PHP hash 演算法；無效值會回退為 `sha256` |
-| `temporary_url_ttl` | temporary URL 預設有效分鐘數 |
-| `model` | 必須繼承 `StoredFile` 的 Model class |
-| `table` | 儲存檔案紀錄的資料表 |
-| `image.quality` | 圖片處理的預設品質 |
-| `image.max_width` | 圖片處理的預設最大寬度 |
-| `zip.max_files` | 單次 ZIP 下載允許的最大檔案數 |
-| `zip.max_size` | 單次 ZIP 下載允許的未壓縮來源總 bytes |
-| `remote.connect_timeout` | 預設連線逾時秒數 |
-| `remote.timeout` | 預設完整下載逾時秒數 |
-| `remote.max_redirects` | 預設 redirect 上限，範圍為 `0` 至 `10` |
-| `remote.allowed_hosts` | 精確 public host allowlist；空陣列允許通過 SSRF 檢查的 public host |
-| `remote.allowed_ports` | 不可為空的 port allowlist；預設為 HTTP 與 HTTPS 標準 port |
+只有來源方法與 `store()` 是必要呼叫。中間可以視單一檔案的需求覆寫 storage、檔名、
+驗證、owner 與圖片選項。
 
-可以透過環境變數覆寫常用設定：
+## 下一步
 
-```dotenv
-FILE_MAGIC_DISK=s3
-FILE_MAGIC_DIRECTORY=uploads
-FILE_MAGIC_VISIBILITY=private
-```
-
-
-## 儲存第一個檔案
-
-儲存檔案分成三個步驟：
-
-1. 使用 `fromUpload()`、`fromPath()`、`fromUrl()`、`fromContent()`、`fromBase64()`、`text()`、`json()` 或 `csv()` 建立 `PendingFile`。
-2. 使用 `onDisk()`、`inDirectory()`、`named()`、`visibility()` 等方法設定儲存方式。
-3. 呼叫 `store()` 儲存實體檔案及資料庫紀錄。
-
-```php
-$file = FileMagic::fromUpload($uploadedFile)
-    ->onDisk('local')
-    ->inDirectory('documents')
-    ->named('contract')
-    ->store();
-```
-
-只有來源方法與最後的 `store()` 是必要步驟，中間的設定方法皆為選用。
-
-| 目的 | 方法 |
-| --- | --- |
-| 建立待儲存檔案 | `fromUpload()`、`fromPath()`、`fromUrl()`、`fromContent()`、`fromBase64()` |
-| 產生文件 | `text()`、`json()`、`csv()` |
-| 設定儲存位置 | `onDisk()`、`inDirectory()` |
-| 設定檔名 | `named()` |
-| 完成儲存 | `store()` |
-| 查詢與操作已儲存檔案 | `find()` |
-| 將多個檔案下載為 ZIP | `find()->downloadZip()` |
-
+- [儲存上傳、本機、字串與 Base64 檔案](/zh-TW/guide/storing-files)
+- [安全匯入遠端 HTTP(S) 檔案](/zh-TW/guide/remote-files)
+- [查詢、讀取與下載已儲存檔案](/zh-TW/guide/querying-files)
+- [查找所有應用程式 API 與欄位](/zh-TW/guide/reference)
 

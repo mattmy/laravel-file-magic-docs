@@ -26,9 +26,9 @@ features:
 
 ## 系統需求
 
-FileMagic 支援 PHP 8.3 以上與 Laravel 12、13。PHP `ext-fileinfo` 是 Composer
-會在安裝階段檢查的必要依賴；PHP `ext-curl` 則只在透過 `fromUrl()` 匯入遠端
-HTTP(S) 檔案時需要。
+FileMagic 支援 PHP 8.3–8.x 與 Laravel 12、13；CI 會在 PHP 8.3、8.4、8.5 分別測試
+兩個 Laravel 版本。PHP `ext-fileinfo` 是 Composer 會在安裝階段檢查的必要依賴；
+PHP `ext-curl` 則只在透過 `fromUrl()` 匯入遠端 HTTP(S) 檔案時需要。
 圖片縮放需要 Intervention Image 4 搭配 GD 或 Imagick；ZIP 批次下載則需要 PHP
 `ext-zip`。
 

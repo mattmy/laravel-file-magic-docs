@@ -26,11 +26,11 @@ features:
 
 ## Requirements
 
-FileMagic supports PHP 8.3 or later and Laravel 12 or 13. PHP `ext-fileinfo` is
-required and checked by Composer during installation. PHP `ext-curl` is
-optional and needed only for remote HTTP(S) imports through `fromUrl()`.
-Image resizing needs Intervention Image 4 with GD or Imagick, while ZIP
-downloads need PHP `ext-zip`.
+FileMagic supports PHP 8.3–8.x and Laravel 12 or 13. CI tests both Laravel versions on
+PHP 8.3, 8.4, and 8.5. PHP `ext-fileinfo` is required and checked by Composer during
+installation. PHP `ext-curl` is optional and needed only for remote HTTP(S) imports through
+`fromUrl()`. Image resizing needs Intervention Image 4 with GD or Imagick, while ZIP downloads
+need PHP `ext-zip`.
 
 ```bash
 composer require mattmy/laravel-file-magic
