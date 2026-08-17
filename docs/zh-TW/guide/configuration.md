@@ -18,7 +18,7 @@ php artisan vendor:publish --tag=file-magic-config
 | `allowed_mime_types` | `[]` | 允許的 MIME types；空陣列允許所有未被下列設定封鎖的類型。 |
 | `blocked_mime_types` | PHP MIME types | 拒絕的 MIME types；可用 `blockMimeTypes()` 覆寫單一檔案的設定。 |
 | `collision` | `unique` | 目標路徑存在時使用 `unique`、`error` 或 `overwrite`。 |
-| `checksum_algorithm` | `sha256` | 計算 checksum 的 PHP hash 演算法；無效值會回退為 `sha256`。 |
+| `checksum_algorithm` | `sha256` | 計算 checksum 的受支援 PHP hash 演算法。 |
 | `temporary_url_ttl` | `5` | Temporary URL 的預設有效分鐘數。 |
 | `model` | 套件 `StoredFile` | Eloquent Model class；自訂 class 必須繼承套件 Model。 |
 | `table` | `stored_files` | Model 與已發佈 migration 使用的資料表。 |
@@ -33,6 +33,15 @@ php artisan vendor:publish --tag=file-magic-config
 | `remote.allowed_ports` | `[80, 443]` | 遠端下載允許使用的非空 destination port 清單。 |
 
 預設封鎖的 MIME types 是 `application/x-httpd-php` 與 `application/x-php`。
+
+設定值採嚴格型別，並在使用對應功能時驗證。FileMagic 不會轉換字串整數、移除錯誤的
+清單成員，或在設定值無效時回退至預設值。無效值會拋出 `InvalidConfiguration`，並指出
+受影響的 key。未使用的 optional 圖片、ZIP、遠端下載與 temporary URL 設定不會阻擋
+其他操作。
+
+升級前請確認數值設定使用 PHP integer 而非數字字串、清單使用連續整數 keys 並包含正確
+型別、enum-backed 設定完全符合表列值，而且每個指定 disk 都存在於
+`filesystems.disks`。
 
 已執行發佈的 migration 後再修改 `table`，不會重新命名既有資料。已部署的應用程式應
 建立新的 migration。更換 `model` 或 `table` 時，另請參考

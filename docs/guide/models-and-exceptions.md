@@ -30,6 +30,7 @@ All exceptions extend `FileMagicException`.
 
 | Exception | Meaning |
 | --- | --- |
+| `InvalidConfiguration` | Invalid package configuration or matching operation option |
 | `InvalidFileSource` | Invalid upload, path, or stream |
 | `InvalidBase64` | Invalid Base64 or Data URI |
 | `InvalidDocumentData` | Invalid UTF-8, JSON data, or CSV rows |

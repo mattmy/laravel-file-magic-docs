@@ -44,6 +44,7 @@ final class StoredFile extends BaseStoredFile
 
 | 例外 | 原因 |
 | --- | --- |
+| `InvalidConfiguration` | 無效套件設定或對應的單次操作選項 |
 | `InvalidFileSource` | 無效 upload、路徑或 stream |
 | `InvalidBase64` | 無效 Base64 或 Data URI |
 | `InvalidDocumentData` | 無效 UTF-8、JSON 資料或 CSV rows |

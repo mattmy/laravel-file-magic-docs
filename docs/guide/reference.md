@@ -44,18 +44,20 @@ $pending->resizeImage(?int $maxWidth = null, ?int $quality = null): self
 $pending->store(): StoredFile
 ```
 
-- `onDisk()` selects a Laravel Filesystem disk.
-- `inDirectory()` selects a relative directory on that disk.
-- `named()` selects a filename without its extension.
+- `onDisk()` selects a configured Laravel Filesystem disk and rejects an empty name.
+- `inDirectory()` selects a canonical forward-slash relative directory; an empty string selects
+  the disk root. Unsafe or ambiguous paths throw `InvalidStoragePath`.
+- `named()` selects a filename without its extension. Unsafe, reserved, empty, or names longer
+  than 200 characters throw `InvalidFileName`.
 - `visibility()` selects `FileVisibility::Private` or `FileVisibility::Public`.
 - `onCollision()` selects `Unique`, `Error`, or `Overwrite` when the path already exists.
-- `maxSize()` sets the maximum accepted bytes for this file.
-- `allowMimeTypes()` accepts only the supplied MIME types for this file.
-- `blockMimeTypes()` rejects the supplied MIME types for this file.
+- `maxSize()` sets a positive maximum byte count for both the original and stored result.
+- `allowMimeTypes()` accepts only the supplied list of non-empty MIME type strings.
+- `blockMimeTypes()` rejects the supplied non-empty strings in a list; the list itself may be empty.
 - `withMetadata()` saves application data in the file record's `metadata` field.
 - `ownedBy()` associates the file with a saved Eloquent model.
 - `resizeImage()` sets the maximum width and output quality for supported images. A `null`
-  parameter uses its configured default.
+  parameter uses its configured default; width must be positive and quality must be `1` to `100`.
 - `store()` saves the physical file and returns its `StoredFile` record.
 
 The following methods return the choices currently set on a `PendingFile`. A value is `null`

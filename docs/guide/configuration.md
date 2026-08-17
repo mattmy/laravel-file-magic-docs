@@ -19,7 +19,7 @@ php artisan vendor:publish --tag=file-magic-config
 | `allowed_mime_types` | `[]` | Allowed MIME types; empty allows every type not blocked below. |
 | `blocked_mime_types` | PHP MIME types | MIME types rejected unless replaced for one file with `blockMimeTypes()`. |
 | `collision` | `unique` | `unique`, `error`, or `overwrite` when a target path exists. |
-| `checksum_algorithm` | `sha256` | PHP hash algorithm used for checksums; invalid values fall back to `sha256`. |
+| `checksum_algorithm` | `sha256` | Supported PHP hash algorithm used for checksums. |
 | `temporary_url_ttl` | `5` | Default temporary URL lifetime in minutes. |
 | `model` | Package `StoredFile` | Eloquent model class; a custom class must extend the package model. |
 | `table` | `stored_files` | Database table used by the model and published migration. |
@@ -34,6 +34,15 @@ php artisan vendor:publish --tag=file-magic-config
 | `remote.allowed_ports` | `[80, 443]` | Non-empty list of destination ports permitted for downloads. |
 
 The default blocked MIME types are `application/x-httpd-php` and `application/x-php`.
+
+Configuration values are strictly typed and are validated when the corresponding feature is
+used. FileMagic does not cast string integers, discard invalid list members, or fall back from
+an invalid value. Invalid values throw `InvalidConfiguration` and identify the affected key.
+Unused optional image, ZIP, remote, and temporary-URL settings do not block other operations.
+
+Before upgrading, make sure numeric settings are PHP integers rather than numeric strings,
+list settings use consecutive integer keys and valid member types, enum-backed settings match
+the documented values exactly, and every configured disk exists in `filesystems.disks`.
 
 Changing `table` after the published migration has run does not rename existing data. Create a
 new migration for an already deployed application. See [Models and exceptions](/guide/models-and-exceptions)

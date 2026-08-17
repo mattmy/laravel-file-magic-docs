@@ -75,4 +75,8 @@ $file = FileMagic::fromUpload($image)
 
 `resizeImage()` 採用 best-effort 行為：非圖片、GIF、SVG、不支援的格式，以及 Intervention Image 無法解碼或編碼的內容，都會忽略圖片設定並原樣儲存，不會拋出圖片處理例外。無效的圖片選項，以及處理受支援圖片時缺少 Intervention Image、GD 或 Imagick，仍會拋出明確例外。
 
+FileMagic 會在圖片解碼或縮放前先對原始來源套用 size 與 MIME 限制；輸出有變更時，
+也會在儲存前再次檢查最終內容。原始圖片超過 `maxSize()` 時，即使縮放後可能變小，
+仍會被拒絕。
+
 

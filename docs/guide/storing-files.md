@@ -67,7 +67,9 @@ $file = FileMagic::fromBase64(
 )->store();
 ```
 
-Decoding is strict. Invalid or non-canonical input throws `InvalidBase64`. Base64 consumes more memory than its decoded file, so prefer uploads or paths for large objects.
+Decoding is strict. Invalid or non-canonical input throws `InvalidBase64`, while oversized input
+throws `FileTooLarge` before decoded content is allocated. Valid Base64 still consumes more
+memory than its decoded file, so prefer uploads or paths for large objects.
 
 
 ## Customize storage
@@ -85,7 +87,11 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-`named()` takes a name without extension. Directories must be relative; absolute paths, drive paths, null bytes, `.` and `..` are rejected.
+`named()` takes a name without extension. Directories use canonical forward-slash-separated
+relative paths; an empty directory means the disk root. Leading or trailing separators,
+backslashes, repeated separators, whitespace around segments, control or Windows-unsafe
+characters, `.` and `..`, and reserved Windows names are rejected rather than normalized.
+Filenames follow the same character and reserved-name rules and cannot start or end with a dot.
 
 Collision policies:
 
@@ -116,7 +122,9 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-Per-operation values override their corresponding global configuration. FileMagic uses `finfo`, not the browser-provided MIME header.
+Per-operation values override their corresponding global configuration. `maxSize()` applies to
+both the original input and the final image output. FileMagic uses `finfo`, not the
+browser-provided MIME header.
 
 
 ## Metadata and ownership

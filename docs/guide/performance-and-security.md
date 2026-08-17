@@ -4,10 +4,11 @@
 
 - `contents()` loads the complete file into memory. Use `readStream()` for large files and
   close the returned stream after use.
-- Base64 content needs more memory than the decoded file. Prefer uploads, paths, or remote
-  sources for large files.
-- Image processing can need much more memory than the compressed image size. Test with the
-  largest dimensions your application accepts.
+- Oversized Base64 is rejected before decoded content is allocated. Valid Base64 still needs
+  more memory than the decoded file, so prefer uploads, paths, or remote sources for large files.
+- Source size and MIME rules are applied before image processing, but accepted images can still
+  need much more memory than their compressed size. Test with the largest dimensions your
+  application accepts.
 - `Overwrite` needs local temporary space close to the existing file size and takes longer
   than normal storage. Prefer `Unique` unless the path must stay the same.
 - ZIP downloads need temporary space for the source data and ZIP archive. Set suitable

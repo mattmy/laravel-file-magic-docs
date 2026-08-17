@@ -71,4 +71,8 @@ $file = FileMagic::fromUpload($image)
 
 JPEG, PNG, WebP, and BMP are processed when supported by the active driver. `resizeImage()` is best-effort: non-images, GIF, SVG, unsupported formats, and content that Intervention Image cannot decode or encode are stored unchanged without an image-processing error. Invalid resize options and missing Intervention Image, GD, or Imagick still produce explicit exceptions when a supported image requires processing.
 
+Size and MIME restrictions are checked against the original source before image decoding or
+resizing, then checked again against changed output before storage. An original image above
+`maxSize()` is rejected even when resizing would have produced a smaller file.
+
 

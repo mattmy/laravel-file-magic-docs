@@ -69,7 +69,8 @@ $file = FileMagic::fromBase64(
 )->store();
 ```
 
-Base64 採用嚴格解碼。無效或非標準化的內容會拋出 `InvalidBase64`。
+Base64 採用嚴格解碼。無效或非標準化的內容會拋出 `InvalidBase64`；超限內容則會在配置
+解碼後內容前拋出 `FileTooLarge`。
 
 Base64 字串本身及解碼後的內容都會占用記憶體。大型檔案應優先使用 upload 或本機路徑來源。
 
@@ -91,7 +92,10 @@ $file = FileMagic::fromUpload($uploadedFile)
 
 `named()` 接受不含副檔名的檔名。副檔名會由 FileMagic 根據可信任的 MIME type 決定。
 
-儲存目錄必須是相對路徑。絕對路徑、Windows drive path、null byte、`.` 與 `..` 都會被拒絕。
+儲存目錄必須是使用 forward slash 分隔的 canonical 相對路徑；空字串代表 disk root。
+前後 separator、backslash、重複 separator、segment 前後空白、control 或 Windows unsafe
+字元、`.`、`..` 與 Windows 保留名稱都會被拒絕，不會被自動正規化。檔名套用相同的
+字元與保留名稱規則，且不可用 dot 開頭或結尾。
 
 ### 檔名碰撞策略
 
@@ -143,7 +147,8 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-單次操作的設定會覆寫對應的全域設定。FileMagic 使用 `finfo` 偵測內容，不信任瀏覽器提供的 MIME header。
+單次操作的設定會覆寫對應的全域設定。`maxSize()` 同時限制原始輸入與圖片處理後的
+最終輸出。FileMagic 使用 `finfo` 偵測內容，不信任瀏覽器提供的 MIME header。
 
 
 ## 附加 metadata

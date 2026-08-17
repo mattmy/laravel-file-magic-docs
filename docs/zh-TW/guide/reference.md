@@ -44,17 +44,20 @@ $pending->resizeImage(?int $maxWidth = null, ?int $quality = null): self
 $pending->store(): StoredFile
 ```
 
-- `onDisk()`：選擇 Laravel Filesystem disk。
-- `inDirectory()`：選擇 disk 內的相對目錄。
-- `named()`：設定不含副檔名的檔名。
+- `onDisk()`：選擇已設定的 Laravel Filesystem disk，disk 名稱不可為空字串。
+- `inDirectory()`：選擇以 forward slash 表示的 canonical 相對目錄；空字串代表 disk
+  root。不安全或模糊路徑會拋出 `InvalidStoragePath`。
+- `named()`：設定不含副檔名的檔名。不安全、保留、空白或超過 200 字元的名稱會拋出
+  `InvalidFileName`。
 - `visibility()`：選擇 `FileVisibility::Private` 或 `FileVisibility::Public`。
 - `onCollision()`：路徑已存在時選擇 `Unique`、`Error` 或 `Overwrite`。
-- `maxSize()`：設定這個檔案可接受的最大 bytes。
-- `allowMimeTypes()`：這個檔案只接受指定 MIME types。
-- `blockMimeTypes()`：這個檔案拒絕指定 MIME types。
+- `maxSize()`：以正整數設定原始輸入與最終儲存結果可接受的最大 bytes。
+- `allowMimeTypes()`：以非空 MIME type strings 組成的 list 限制可接受類型。
+- `blockMimeTypes()`：拒絕 list 中的非空 MIME type strings；list 本身可以是空的。
 - `withMetadata()`：將應用程式資料儲存在檔案紀錄的 `metadata` 欄位。
 - `ownedBy()`：將檔案關聯至已儲存的 Eloquent Model。
-- `resizeImage()`：設定支援圖片的最大寬度與輸出品質；參數為 `null` 時使用設定預設值。
+- `resizeImage()`：設定支援圖片的最大寬度與輸出品質；參數為 `null` 時使用設定預設值，
+  width 必須為正整數，quality 必須介於 `1` 至 `100`。
 - `store()`：儲存實體檔案並回傳 `StoredFile` 紀錄。
 
 以下方法會回傳 `PendingFile` 目前設定的選項。回傳 `null` 代表尚未單獨設定，
