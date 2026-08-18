@@ -10,6 +10,8 @@
   請使用應用程式接受的最大圖片尺寸測試。
 - `Overwrite` 需要接近現有檔案大小的本機暫存空間，耗時也高於一般儲存。除非 path
   必須保持不變，否則請優先使用 `Unique`。
+- 啟用 collision lock 時，每次儲存都會等待候選 disk/path 的 lock。Lock lease 應涵蓋最慢的
+  完整儲存流程，並監控 lock timeout。
 - ZIP 下載需要容納來源資料與 ZIP archive 的暫存空間，請設定合適的
   `zip.max_files` 與 `zip.max_size`。
 - 遠端匯入需要接近下載檔案大小的本機暫存空間，下載完成前也會持續占用目前的 PHP
@@ -37,6 +39,11 @@
 - 除非能安全隔離，下載的 HTML 與其他 active content 應保持 private。不可信任檔案
   應以 attachment 與 `X-Content-Type-Options: nosniff` 提供。
 - 避免記錄檔案內容、credentials、private URLs 或敏感 metadata。
+
+啟用後，collision lock 是合作式保護：writers 必須產生相同 key、共用相同 cache backend，並在
+lease 內完成。直接寫入 storage 的程式與彼此隔離的 cache clusters 不在此邊界內。
+Lock 不是 ACID transaction，因此 process 或 infrastructure 故障後仍應透過 audit 與
+reconciliation 進行營運復原。
 
 安全性問題請依照倉庫的
 [安全政策](https://github.com/mattmy/laravel-file-magic/blob/main/SECURITY.md)私下回報。

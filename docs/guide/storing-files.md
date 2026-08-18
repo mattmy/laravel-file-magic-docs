@@ -104,6 +104,14 @@ space close to the existing file size and performs more storage and disk work, s
 than normal storage. Prefer the default `Unique` policy unless the storage path must stay the
 same. If both replacement and recovery fail, `FileRecoveryFailed` is thrown.
 
+Collision locking is disabled by default; this preserves compatibility but does not protect
+concurrent writers from TOCTOU races. When `collision_lock.enabled` is `true`, all collision
+policies make their existence decision while holding an atomic cache lock for the candidate
+disk and path. The lock remains held through the file write, database record, and any delete
+or restore compensation. This coordinates FileMagic writers that use the same lock backend.
+If the lock cannot be acquired before `collision_lock.wait_seconds`, `FileWriteFailed` is
+thrown before the target is inspected or changed.
+
 
 ## Size and MIME restrictions
 

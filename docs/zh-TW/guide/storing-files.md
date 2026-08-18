@@ -113,6 +113,12 @@ CollisionPolicy::Overwrite;
 也會增加 storage 與 disk 操作，因此比一般儲存慢。除非 storage path 必須保持不變，
 否則建議使用預設的 `Unique`。如果取代與還原都失敗，會拋出 `FileRecoveryFailed`。
 
+Collision lock 預設停用；這能維持相容性，但不保護 concurrent writers 的 TOCTOU 競爭。當
+`collision_lock.enabled` 為 `true` 時，所有 collision policy 都會在持有候選 disk 與 path 的
+atomic cache lock 時判斷目標是否存在。File write、database record，以及任何 delete 或 restore
+補償完成前都不會釋放 lock。這會協調使用同一 lock backend 的 FileMagic writers。若無法在
+`collision_lock.wait_seconds` 內取得 lock，會在檢查或變更目標前拋出 `FileWriteFailed`。
+
 
 ## 檔案大小與 MIME type 限制
 
