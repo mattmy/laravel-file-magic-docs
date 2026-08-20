@@ -4,8 +4,9 @@
 
 - `contents()` loads the complete file into memory. Use `readStream()` for large files and
   close the returned stream after use.
-- Oversized Base64 is rejected before decoded content is allocated. Valid Base64 still needs
-  more memory than the decoded file, so prefer uploads, paths, or remote sources for large files.
+- Oversized Base64 is rejected from decoded size before decoding. Valid Base64 is decoded in
+  bounded chunks into a temporary stream, so the encoded input remains in memory while decoded
+  bytes require temporary disk space. Prefer uploads, paths, or remote sources for large inputs.
 - Source size and MIME rules are applied before image processing, but accepted images can still
   need much more memory than their compressed size. Test with the largest dimensions your
   application accepts.

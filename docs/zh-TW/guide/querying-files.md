@@ -73,6 +73,8 @@ $url = FileMagic::find($target)
     ->temporaryUrl(now()->addMinutes(30));
 ```
 
+`StoredFile::temporaryUrl()` 必須明確傳入到期時間。需要使用設定的 `temporary_url_ttl` 時，請使用此查詢 API。
+
 批次取得公開 URL：
 
 ```php

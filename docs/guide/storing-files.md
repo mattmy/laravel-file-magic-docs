@@ -68,8 +68,9 @@ $file = FileMagic::fromBase64(
 ```
 
 Decoding is strict. Invalid or non-canonical input throws `InvalidBase64`, while oversized input
-throws `FileTooLarge` before decoded content is allocated. Valid Base64 still consumes more
-memory than its decoded file, so prefer uploads or paths for large objects.
+throws `FileTooLarge` from its decoded size before decoding starts. Valid input is decoded in
+bounded chunks into a temporary stream: the encoded input remains in memory, while decoded bytes
+use temporary disk space. Prefer uploads or paths when the encoded input itself is large.
 
 
 ## Customize storage

@@ -7,7 +7,10 @@ namespace App\Models;
 
 use Mattmy\FileMagic\Models\StoredFile as BaseStoredFile;
 
-final class StoredFile extends BaseStoredFile {}
+final class StoredFile extends BaseStoredFile
+{
+    protected $table = 'assets';
+}
 ```
 
 ```php
@@ -15,14 +18,20 @@ final class StoredFile extends BaseStoredFile {}
 'table' => 'assets',
 ```
 
-The custom model must extend the package model. FileMagic uses its connection, table, and
-primary key when storing, finding, and deleting files. Batch deletion does not apply global
+The custom model must extend the package model and set its `$table` to exactly the configured
+`table` value. FileMagic validates this before storing, finding, or deleting files, then uses
+the model's connection and primary key. Batch deletion does not apply global
 scopes or dispatch each model's `deleting` and `deleted` events; use single-model deletion
 when your application depends on those scopes or events.
 
 Configure a custom table before publishing the migration. If already deployed, create a new
 migration rather than editing migration history.
 
+## 0.x upgrade note
+
+If your application calls `StoredFile::temporaryUrl()` directly, pass a `DateTimeInterface`
+expiration now. `FileMagic::find($target)->temporaryUrl()` keeps the configured default
+lifetime. A custom model must now declare the same `$table` as `file-magic.table`.
 
 ## Exceptions
 
@@ -42,7 +51,7 @@ All exceptions extend `FileMagicException`.
 | `InvalidFileName` | Unsafe or reserved name |
 | `InvalidStoragePath` | Unsafe directory |
 | `InvalidFileTarget` | Invalid ID, UUID, model, array, or Collection target |
-| `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` |
+| `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` or uses a different table |
 | `FileTooLarge` | Byte limit exceeded |
 | `DisallowedMimeType` | MIME type rejected |
 | `FileWriteFailed` | Storage write, collision, replacement, or deletion failure |

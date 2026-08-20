@@ -25,8 +25,8 @@ php artisan vendor:publish --tag=file-magic-config
 | `collision_lock.wait_seconds` | `10` | Positive maximum wait for a contended lock in seconds. |
 | `checksum_algorithm` | `sha256` | Supported PHP hash algorithm used for checksums. |
 | `temporary_url_ttl` | `5` | Default temporary URL lifetime in minutes. |
-| `model` | Package `StoredFile` | Eloquent model class; a custom class must extend the package model. |
-| `table` | `stored_files` | Database table used by the model and published migration. |
+| `model` | Package `StoredFile` | Eloquent model class; a custom class must extend the package model and use the configured table. |
+| `table` | `stored_files` | Database table used by the model and published migration; custom models must set the same `$table`. |
 | `image.quality` | `80` | Output quality used when `resizeImage()` receives no quality. |
 | `image.max_width` | `1920` | Maximum width used when `resizeImage()` receives no width. |
 | `zip.max_files` | `100` | Maximum records in one ZIP download. |

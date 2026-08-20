@@ -151,7 +151,7 @@ $file->existsOnDisk(): bool
 $file->fullName(): string
 $file->originalName(): string
 $file->url(): string
-$file->temporaryUrl(?DateTimeInterface $expiration = null): string
+$file->temporaryUrl(DateTimeInterface $expiration): string
 $file->contents(): string
 $file->readStream(): resource
 $file->download(?string $name = null): StreamedResponse
@@ -163,6 +163,8 @@ $file->delete(): ?bool
 - `existsOnDisk()` checks whether `path` exists on the disk.
 - `fullName()` returns `filename` and `extension` together.
 - `originalName()` returns `original_filename`, or `fullName()` when unavailable.
+- `temporaryUrl()` on a model requires an explicit expiration. Use
+  `FileMagic::find($target)->temporaryUrl()` to use `temporary_url_ttl`.
 - URL, content, stream, download, and delete methods operate on this record's physical file.
 
 ## RemoteFileOptions

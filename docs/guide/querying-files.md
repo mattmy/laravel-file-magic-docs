@@ -61,6 +61,9 @@ $customExpiration = FileMagic::find($target)
     ->temporaryUrl(now()->addMinutes(30));
 ```
 
+`StoredFile::temporaryUrl()` requires an explicit expiration. Use this query API when the
+configured `temporary_url_ttl` should supply it.
+
 Retrieve public URLs for multiple targets:
 
 ```php

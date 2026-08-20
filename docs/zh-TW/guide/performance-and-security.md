@@ -4,8 +4,8 @@
 
 - `contents()` 會把完整檔案放入記憶體。大型檔案請使用 `readStream()`，並在使用後
   關閉回傳的 stream。
-- 超限 Base64 會在配置解碼後內容前被拒絕；合法 Base64 仍需要比解碼後檔案更多的
-  記憶體。大型檔案請優先使用 upload、path 或 remote source。
+- 超限 Base64 會依解碼後大小在解碼前被拒絕；合法 Base64 會以有界線的區塊解碼至暫存 stream，
+  編碼後輸入保留於記憶體，解碼後 bytes 需要暫存磁碟空間。大型輸入請優先使用 upload、path 或 remote source。
 - 原始來源會先通過 size 與 MIME 規則，但合格圖片的處理記憶體仍可能遠高於壓縮大小；
   請使用應用程式接受的最大圖片尺寸測試。
 - `Overwrite` 需要接近現有檔案大小的本機暫存空間，耗時也高於一般儲存。除非 path

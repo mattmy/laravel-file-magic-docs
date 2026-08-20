@@ -11,6 +11,8 @@ use Mattmy\FileMagic\Models\StoredFile as BaseStoredFile;
 
 final class StoredFile extends BaseStoredFile
 {
+    protected $table = 'assets';
+
     // 加入應用程式專用的 relationship 或 scope。
 }
 ```
@@ -19,10 +21,11 @@ final class StoredFile extends BaseStoredFile
 
 ```php
 'model' => App\Models\StoredFile::class,
+'table' => 'assets',
 ```
 
-自訂 Model 必須繼承套件提供的 `StoredFile`。FileMagic 儲存、尋找與刪除檔案時會使用
-該 Model 的 connection、table 與 primary key。批次刪除不套用 global scopes，也不會
+自訂 Model 必須繼承套件提供的 `StoredFile`，並將 `$table` 設為與設定 `table` 完全一致的值。FileMagic 會在儲存、尋找或刪除前驗證此設定，之後使用
+該 Model 的 connection 與 primary key。批次刪除不套用 global scopes，也不會
 逐筆觸發 `deleting` 與 `deleted` events；應用程式依賴這些 scope 或 event 時，請改用
 單筆 Model 刪除。
 
@@ -37,6 +40,9 @@ final class StoredFile extends BaseStoredFile
 
 如果 migration 已經部署到正式環境，應建立新的 migration 重新命名資料表，不要修改已經部署的 migration。
 
+## 0.x 升級說明
+
+應用程式如果直接呼叫 `StoredFile::temporaryUrl()`，現在必須傳入 `DateTimeInterface` 到期時間。`FileMagic::find($target)->temporaryUrl()` 仍會使用設定的預設有效期。自訂 Model 現在必須宣告與 `file-magic.table` 相同的 `$table`。
 
 ## 例外
 

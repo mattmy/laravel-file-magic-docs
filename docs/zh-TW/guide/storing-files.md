@@ -69,10 +69,7 @@ $file = FileMagic::fromBase64(
 )->store();
 ```
 
-Base64 採用嚴格解碼。無效或非標準化的內容會拋出 `InvalidBase64`；超限內容則會在配置
-解碼後內容前拋出 `FileTooLarge`。
-
-Base64 字串本身及解碼後的內容都會占用記憶體。大型檔案應優先使用 upload 或本機路徑來源。
+Base64 採用嚴格解碼。無效或非標準化的內容會拋出 `InvalidBase64`；超限內容則會依解碼後大小在解碼前拋出 `FileTooLarge`。合法內容會以有界線的區塊解碼至暫存 stream：編碼後輸入保留於記憶體，解碼後 bytes 使用暫存磁碟空間。編碼後輸入本身很大時，請優先使用 upload 或本機路徑來源。
 
 
 ## 自訂儲存方式

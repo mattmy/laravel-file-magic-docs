@@ -150,7 +150,7 @@ $file->existsOnDisk(): bool
 $file->fullName(): string
 $file->originalName(): string
 $file->url(): string
-$file->temporaryUrl(?DateTimeInterface $expiration = null): string
+$file->temporaryUrl(DateTimeInterface $expiration): string
 $file->contents(): string
 $file->readStream(): resource
 $file->download(?string $name = null): StreamedResponse
@@ -162,6 +162,8 @@ $file->delete(): ?bool
 - `existsOnDisk()`：確認 `path` 是否存在於 disk。
 - `fullName()`：取得 `filename` 與 `extension` 組成的完整檔名。
 - `originalName()`：取得 `original_filename`；沒有原始檔名時回傳 `fullName()`。
+- Model 的 `temporaryUrl()` 必須明確傳入到期時間；要使用 `temporary_url_ttl`，請改用
+  `FileMagic::find($target)->temporaryUrl()`。
 - URL、內容、stream、下載及刪除方法會操作這筆紀錄對應的實體檔案。
 
 ## RemoteFileOptions

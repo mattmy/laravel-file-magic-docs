@@ -24,8 +24,8 @@ php artisan vendor:publish --tag=file-magic-config
 | `collision_lock.wait_seconds` | `10` | 等待競爭中 lock 的正整數秒數上限。 |
 | `checksum_algorithm` | `sha256` | 計算 checksum 的受支援 PHP hash 演算法。 |
 | `temporary_url_ttl` | `5` | Temporary URL 的預設有效分鐘數。 |
-| `model` | 套件 `StoredFile` | Eloquent Model class；自訂 class 必須繼承套件 Model。 |
-| `table` | `stored_files` | Model 與已發佈 migration 使用的資料表。 |
+| `model` | 套件 `StoredFile` | Eloquent Model class；自訂 class 必須繼承套件 Model 並使用設定的資料表。 |
+| `table` | `stored_files` | Model 與已發佈 migration 使用的資料表；自訂 Model 必須設定相同的 `$table`。 |
 | `image.quality` | `80` | `resizeImage()` 未指定品質時使用的輸出品質。 |
 | `image.max_width` | `1920` | `resizeImage()` 未指定寬度時使用的最大寬度。 |
 | `zip.max_files` | `100` | 單次 ZIP 下載的紀錄數量上限。 |
