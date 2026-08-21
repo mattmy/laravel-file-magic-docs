@@ -40,8 +40,9 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-三種形式都會保留輸入順序並移除重複 Model。已存在的 Model target 會直接使用。
-空 array 或 Collection 會回傳空的 `Illuminate\Support\Collection`。
+三種形式都會保留輸入順序並移除重複紀錄。Model target 只作為 selector：每個非空的
+`find()` 都會執行一筆套用 scope 的查詢，回傳目前的 canonical record，不會直接重用傳入的
+instance。空 array 或 Collection 不查詢，並回傳空的 `Illuminate\Support\Collection`。
 
 Array 與 Collection 必須是一維結構，每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。無效元素會拋出 `InvalidFileTarget`，不會被靜默移除。
 

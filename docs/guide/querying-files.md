@@ -40,8 +40,10 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-All three forms preserve input order and remove duplicate models. Existing model targets are
-used directly. Empty arrays and Collections return an empty `Illuminate\Support\Collection`.
+All three forms preserve input order and remove duplicate records. A model target is a selector:
+FileMagic runs one scoped query for every non-empty `find()` call and returns the current canonical
+record instead of reusing the supplied instance. Empty arrays and Collections return an empty
+`Illuminate\Support\Collection` without a query.
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
 

@@ -206,7 +206,8 @@ $attachment = $post->files->firstOrFail();
 return FileMagic::find($attachment)->download();
 ```
 
-傳入既有的 `StoredFile` Model 不會再次執行資料庫查詢。
+將既有的 `StoredFile` Model 傳給 `find()` 時，會執行一筆套用 scope 的查詢以取得目前的
+canonical record；eager loading 仍可避免 owner relation 本身的查詢。
 
 `owner_id` 使用字串欄位，因此可支援整數、UUID 與 ULID 主鍵。
 

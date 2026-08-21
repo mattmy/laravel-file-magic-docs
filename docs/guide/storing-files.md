@@ -175,7 +175,8 @@ $attachment = $post->files->firstOrFail();
 return FileMagic::find($attachment)->download();
 ```
 
-Passing an existing `StoredFile` model does not execute another database query.
+Passing an existing `StoredFile` model to `find()` performs one scoped query to obtain the current
+canonical record. Eager loading still avoids a query for the owner relation itself.
 
 The `owner_id` column is a string, so integer, UUID, and ULID owner keys are supported.
 
