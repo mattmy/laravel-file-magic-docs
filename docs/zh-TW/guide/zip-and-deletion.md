@@ -49,6 +49,9 @@ $deleted = FileMagic::find($targets)->delete();
 批次刪除只會移除已確認刪除完成或本來就不存在的實體檔案紀錄。仍存在或無法確認
 狀態的檔案會保留紀錄，讓應用程式稍後重試。
 
+啟用 collision lock 時，FileMagic 會依 canonical order 鎖定所有不同的候選 paths，並在接觸
+storage 前重新載入 records。已消失或 identity 改變的 record 不會使用 stale path 執行刪除。
+
 如果只有部分檔案完成刪除，FileMagic 會先保存已確認的一致狀態，再拋出
 `PartialFileDeletion`。可透過 `deletedCount()`、`failedCount()` 與 `failedKeys()`
 取得結果。你可以安全地用原本的 `FileMagic::find($targets)->delete()` 重試；

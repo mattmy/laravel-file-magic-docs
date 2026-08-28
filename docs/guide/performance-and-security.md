@@ -12,8 +12,9 @@
   application accepts.
 - `Overwrite` needs local temporary space close to the existing file size and takes longer
   than normal storage. Prefer `Unique` unless the path must stay the same.
-- When collision locking is enabled, every store waits for a per-candidate disk/path lock.
-  Size the lock lease for the slowest complete store and monitor lock timeouts.
+- When collision locking is enabled, stores, batch deletion, and audit cleanup wait for canonical
+  disk/path locks. Multi-path mutations acquire locks serially, so size the lease for lock
+  acquisition plus the slowest complete mutation and monitor timeouts.
 - ZIP downloads need temporary space for the source data and ZIP archive. Set suitable
   `zip.max_files` and `zip.max_size` limits.
 - Remote imports use local temporary space close to the downloaded size and keep the current
@@ -46,8 +47,9 @@ largest files and batches your application accepts.
   untrusted files as attachments with `X-Content-Type-Options: nosniff`.
 - Avoid logging file contents, credentials, private URLs, or sensitive metadata.
 
-When enabled, collision locks are cooperative: they protect writers that derive the same key, share the same
-cache backend, and finish within the lease. Direct storage writers and isolated cache clusters
+When enabled, collision locks are cooperative: they protect standard FileMagic stores, batch deletion,
+and audit cleanup that derive the same key, share the same cache backend, and finish within the lease.
+Direct model deletion, direct storage writers, and isolated cache clusters
 remain outside that boundary. The lock is not an ACID transaction, so operational recovery
 should still include audit and reconciliation after process or infrastructure failures.
 

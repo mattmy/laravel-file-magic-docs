@@ -19,7 +19,7 @@ php artisan vendor:publish --tag=file-magic-config
 | `allowed_mime_types` | `[]` | Allowed MIME types; empty allows every type not blocked below. |
 | `blocked_mime_types` | PHP MIME types | MIME types rejected unless replaced for one file with `blockMimeTypes()`. |
 | `collision` | `unique` | `unique`, `error`, or `overwrite` when a target path exists. |
-| `collision_lock.enabled` | `false` | Enables cooperative atomic locking for store operations. |
+| `collision_lock.enabled` | `false` | Enables cooperative atomic locking for stores, batch deletion, and audit cleanup. |
 | `collision_lock.store` | `null` | Cache store used for collision locks; `null` uses Laravel's default store. |
 | `collision_lock.lease_seconds` | `300` | Positive lock lease duration in seconds. |
 | `collision_lock.wait_seconds` | `10` | Positive maximum wait for a contended lock in seconds. |
@@ -54,21 +54,23 @@ when replacing `model` or `table`.
 
 ## Optional collision-lock deployment
 
-Collision locking is disabled by default, so normal store operations do not require a
+Collision locking is disabled by default, so normal FileMagic mutations do not require a
 lock-capable cache store. Disabled mode retains the existing behavior and does not protect
-concurrent writers from TOCTOU races. Set `collision_lock.enabled` to `true` to opt in.
+concurrent stores and deletions from TOCTOU races. Set `collision_lock.enabled` to `true` to opt in.
 
-When enabled, every store locks its canonical disk and candidate path before checking whether
-the target exists. Use a Laravel cache store that supports atomic locks: Redis, Memcached,
+When enabled, stores, batch deletion, and audit cleanup use the same canonical disk/path lock.
+Batch operations acquire distinct keys in a stable order and revalidate current database identity
+before mutation. Use a Laravel cache store that supports atomic locks: Redis, Memcached,
 DynamoDB, database, file, or array. A missing or unsupported lock store is rejected. Disabled
 mode does not resolve or validate `store`, `lease_seconds`, or `wait_seconds`.
 
 All lock-enabled application processes that write the same storage paths must use the same shared cache
 backend. The array store is suitable only for single-process tests. The file store coordinates
 multiple servers only when they truly share the same filesystem. Set `lease_seconds` longer
-than the worst-case backup, write, database, and recovery time. A lock timeout throws
-`FileWriteFailed` without automatic retry; invalid lock configuration throws
-`InvalidConfiguration` before the target is inspected or changed.
+than the worst-case multi-lock wait, storage I/O, reconciliation, database mutation, and recovery
+time. Store lock timeout throws `FileWriteFailed`; batch deletion reports `PartialFileDeletion`,
+and audit cleanup exits with code `2`. Invalid lock configuration throws `InvalidConfiguration`
+before the target is inspected or changed.
 
 ## Environment overrides
 

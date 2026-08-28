@@ -109,7 +109,8 @@ Collision locking is disabled by default; this preserves compatibility but does 
 concurrent writers from TOCTOU races. When `collision_lock.enabled` is `true`, all collision
 policies make their existence decision while holding an atomic cache lock for the candidate
 disk and path. The lock remains held through the file write, database record, and any delete
-or restore compensation. This coordinates FileMagic writers that use the same lock backend.
+or restore compensation. Standard batch deletion and audit cleanup use the same path identity,
+so they cannot mutate that record while the store lock is held when all participants share the backend.
 If the lock cannot be acquired before `collision_lock.wait_seconds`, `FileWriteFailed` is
 thrown before the target is inspected or changed.
 

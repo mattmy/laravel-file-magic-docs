@@ -60,6 +60,10 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 `--force` is invalid without `--delete-missing-records`. Storage checks that
 throw exceptions remain unknown and their records are never deleted.
 
+With collision locking enabled, cleanup locks only the initially missing paths, reloads their
+database identity, and checks storage again. Reappeared objects are retained as healthy;
+missing, changed, or unknown records are not deleted.
+
 Cleanup does not dispatch each model's Eloquent `deleting` or `deleted` events. Do not use
 cleanup when your application requires those events for each removed record.
 
@@ -73,10 +77,10 @@ reduce the number of storage requests. Use `--disk` to limit scope, choose an
 appropriate chunk size, and avoid running the command more often than the
 application needs.
 
-The result is a point-in-time observation, not an atomic snapshot shared with
-storage. A different process can create or remove an object between the check
-and database cleanup. Avoid concurrent external operations on the same paths
-while cleanup is running.
+Read-only results are point-in-time observations, not atomic snapshots shared with storage.
+Lock-enabled cleanup closes the FileMagic store/delete race by revalidating under the shared
+path lock, but direct model deletion, external storage writers, different cache backends, and
+operations that exceed the lease remain outside that guarantee.
 
 Storage, network, adapter, and permission exceptions are reported as unknown
 failures rather than missing objects. They produce exit code `2` and preserve

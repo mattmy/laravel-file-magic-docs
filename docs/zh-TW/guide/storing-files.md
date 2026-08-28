@@ -113,7 +113,8 @@ CollisionPolicy::Overwrite;
 Collision lock 預設停用；這能維持相容性，但不保護 concurrent writers 的 TOCTOU 競爭。當
 `collision_lock.enabled` 為 `true` 時，所有 collision policy 都會在持有候選 disk 與 path 的
 atomic cache lock 時判斷目標是否存在。File write、database record，以及任何 delete 或 restore
-補償完成前都不會釋放 lock。這會協調使用同一 lock backend 的 FileMagic writers。若無法在
+補償完成前都不會釋放 lock。標準 batch delete 與 audit cleanup 使用相同 path identity；所有
+participants 共用 backend 時，不會在 store lock 持有期間修改該 record。若無法在
 `collision_lock.wait_seconds` 內取得 lock，會在檢查或變更目標前拋出 `FileWriteFailed`。
 
 

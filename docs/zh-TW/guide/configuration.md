@@ -18,7 +18,7 @@ php artisan vendor:publish --tag=file-magic-config
 | `allowed_mime_types` | `[]` | 允許的 MIME types；空陣列允許所有未被下列設定封鎖的類型。 |
 | `blocked_mime_types` | PHP MIME types | 拒絕的 MIME types；可用 `blockMimeTypes()` 覆寫單一檔案的設定。 |
 | `collision` | `unique` | 目標路徑存在時使用 `unique`、`error` 或 `overwrite`。 |
-| `collision_lock.enabled` | `false` | 啟用 store operation 的 cooperative atomic lock。 |
+| `collision_lock.enabled` | `false` | 啟用儲存、批次刪除與稽核清理的 cooperative atomic lock。 |
 | `collision_lock.store` | `null` | Collision lock 使用的 cache store；`null` 使用 Laravel 預設 store。 |
 | `collision_lock.lease_seconds` | `300` | Lock lease 的正整數秒數。 |
 | `collision_lock.wait_seconds` | `10` | 等待競爭中 lock 的正整數秒數上限。 |
@@ -53,20 +53,22 @@ php artisan vendor:publish --tag=file-magic-config
 
 ## Optional collision lock 部署
 
-Collision lock 預設停用，因此一般 store operation 不要求 cache store 支援 lock。停用模式保留
-既有行為，但不保護 concurrent writers 的 TOCTOU 競爭。將 `collision_lock.enabled` 設為 `true`
+Collision lock 預設停用，因此一般 FileMagic mutation 不要求 cache store 支援 lock。停用模式保留
+既有行為，但不保護 concurrent store 與 delete 的 TOCTOU 競爭。將 `collision_lock.enabled` 設為 `true`
 才會啟用。
 
-啟用後，每次儲存都會先鎖定 canonical disk 與候選 path，再檢查目標是否存在。請使用支援
+啟用後，儲存、批次刪除與稽核清理會共用相同的 canonical disk/path lock。批次操作會以固定
+順序取得不同 keys，並在 mutation 前重新確認目前的 database identity。請使用支援
 atomic lock 的 Laravel cache store：Redis、Memcached、DynamoDB、database、file 或 array。
 找不到或不支援 lock 的 store 會被拒絕。停用時不會解析或驗證 `store`、`lease_seconds` 與
 `wait_seconds`。
 
 所有已啟用 lock 且可能寫入相同 storage path 的應用程式 processes 必須使用同一個共享 cache
 backend。Array store 只適合單一 process 測試；file store 只有在多台伺服器確實共享
-同一 filesystem 時才能跨機協調。`lease_seconds` 應長於最壞情況下 backup、write、
-database 與 recovery 的總時間。等待逾時會拋出 `FileWriteFailed`，不會自動重試；
-lock 設定無效則會在檢查或變更目標前拋出 `InvalidConfiguration`。
+同一 filesystem 時才能跨機協調。`lease_seconds` 應長於最壞情況下 multi-lock wait、storage I/O、
+reconciliation、database mutation 與 recovery 的總時間。儲存等待逾時會拋出 `FileWriteFailed`；
+批次刪除回報 `PartialFileDeletion`，稽核清理則以 exit code `2` 結束。Lock 設定無效會在檢查或
+變更目標前拋出 `InvalidConfiguration`。
 
 ## 環境變數
 

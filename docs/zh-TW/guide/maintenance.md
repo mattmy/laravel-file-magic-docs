@@ -57,6 +57,10 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 `--force` 沒有搭配 `--delete-missing-records` 時屬於無效輸入。Storage 檢查拋出
 例外時仍屬於 unknown，絕不刪除該 record。
 
+啟用 collision lock 時，cleanup 只鎖定初步判定 missing 的 paths，接著重新載入 database
+identity 並再次檢查 storage。重新出現的 object 會保留並計為 healthy；record 消失、identity
+改變或狀態 unknown 時都不會刪除。
+
 清理不會逐筆觸發 Eloquent `deleting` 或 `deleted` model events。應用程式需要為每筆
 移除紀錄執行這些 events 時，不要使用此清理功能。
 
@@ -69,9 +73,9 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 requests 數量。請使用 `--disk` 限制範圍、選擇適當 chunk size，並避免以超過實際
 需求的頻率執行。
 
-結果是檢查當下的觀察，不是 database 與 storage 共用的原子快照。其他程序可能在
-檢查與 database 清理之間新增或移除 object。執行清理時，應避免外部程序同時操作
-相同 paths。
+唯讀結果是檢查當下的觀察，不是 database 與 storage 共用的原子快照。啟用 lock 的 cleanup
+會在共享 path lock 內重新確認狀態，避免 FileMagic store/delete race；但直接刪除 Model、外部
+storage writer、不同 cache backend，以及超過 lease 的 operation 仍不在保證範圍內。
 
 Storage、網路、adapter 或權限例外都會被視為 unknown failure，而不是 missing。
 指令會保留相關 records 並回傳 exit code `2`。
