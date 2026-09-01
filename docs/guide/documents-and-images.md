@@ -40,6 +40,11 @@ $file = FileMagic::csv([
 
 Associative rows use the first row's keys as a header. List rows do not generate a header. Every row must use the same keys in the same order, and every value must be scalar or `null`. CSV uses UTF-8 without a BOM, comma delimiters, double-quote enclosures, and CRLF line endings.
 
+`csv()` consumes the iterable immediately and fully materializes the generated output in PHP
+memory before returning a `PendingFile`. There is no separate CSV output limit, so use it only
+when the complete generated CSV fits within the worker's memory limit; prefer another source
+workflow for large exports.
+
 All three methods return `PendingFile`, so disk, directory, filename, visibility, collision,
 owner, metadata, MIME, and size options remain available. Call `store()` to save the document;
 the result is a normal `StoredFile` that works with every `FileQuery` operation.

@@ -7,6 +7,9 @@
 - Oversized Base64 is rejected from decoded size before decoding. Valid Base64 is decoded in
   bounded chunks into a temporary stream, so the encoded input remains in memory while decoded
   bytes require temporary disk space. Prefer uploads, paths, or remote sources for large inputs.
+- `csv()` consumes its iterable immediately and fully materializes the generated output in PHP
+  memory before returning `PendingFile`. It has no separate output limit; use another source
+  workflow when the complete CSV may approach the worker's memory limit.
 - Source size and MIME rules are applied before image processing, but accepted images can still
   need much more memory than their compressed size. Test with the largest dimensions your
   application accepts.

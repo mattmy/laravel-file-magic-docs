@@ -40,6 +40,10 @@ $file = FileMagic::csv([
 
 Associative rows 會使用第一列的 key 自動產生 header；list rows 不會產生 header。每列必須使用相同的 key 與順序，每個值必須是 scalar 或 `null`。CSV 固定使用不含 BOM 的 UTF-8、逗號 delimiter、雙引號 enclosure 與 CRLF 行尾。
 
+`csv()` 會立即走訪 iterable，並在回傳 `PendingFile` 前把產生的完整輸出放入 PHP 記憶體。
+CSV 沒有獨立的輸出上限，因此請只在完整輸出能容納於 worker 記憶體上限時使用；大型匯出
+應改用其他來源流程。
+
 三個方法都會回傳 `PendingFile`，因此仍可使用 disk、directory、filename、visibility、
 collision、owner、metadata、MIME 與 size 設定。呼叫 `store()` 後會取得一般的
 `StoredFile`，也能使用所有 `FileQuery` 操作。
