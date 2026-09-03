@@ -31,6 +31,9 @@
 - 應用程式必須授權每個儲存、讀取、URL、下載、ZIP 與刪除操作。
 - 上傳檔案前仍須保留 Laravel request validation。
 - 原始檔名、client MIME、metadata、遠端內容與儲存 bytes 都是不可信任資料。
+- 只有應用程式自行產生 bytes 並保證格式時才能使用 `fromGeneratedContent()`。不建議把 upload、
+  HTTP response、Data URI、使用者選擇的 path 或其他不可信任 bytes 連同 Symfony 可識別 MIME type
+  傳入；請使用一般來源入口，讓 `finfo` 檢查內容。
 - 高敏感度流程請優先使用 MIME allowlist。同源提供檔案時，應考慮封鎖 HTML 與 SVG。
 - 敏感檔案請使用 private disk 與短效 temporary URL。
 - 不要將使用者控制的伺服器路徑傳給 `fromPath()`。

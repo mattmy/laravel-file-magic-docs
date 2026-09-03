@@ -37,6 +37,10 @@ largest files and batches your application accepts.
 - Keep Laravel request validation in front of uploaded files.
 - Treat original names, client MIME values, metadata, remote content, and stored bytes as
   untrusted data.
+- Use `fromGeneratedContent()` only when application code created the bytes and guarantees their
+  format. It is not recommended to pass uploads, HTTP responses, Data URIs, user-selected paths,
+  or other untrusted bytes with a Symfony-recognized MIME type; use the ordinary source method so
+  `finfo` inspects them.
 - Prefer MIME allowlists for sensitive workflows. Consider blocking HTML and SVG when files
   are served from the same origin.
 - Keep sensitive files on private disks and use short-lived temporary URLs.

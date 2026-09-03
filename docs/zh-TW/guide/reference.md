@@ -9,6 +9,7 @@
 FileMagic::fromUpload(UploadedFile $file): PendingFile
 FileMagic::fromPath(string $path): PendingFile
 FileMagic::fromContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
+FileMagic::fromGeneratedContent(string $contents, ?string $originalFilename = null, ?string $mimeType = null): PendingFile
 FileMagic::fromBase64(string $base64, ?string $originalFilename = null): PendingFile
 FileMagic::fromUrl(string $url, ?RemoteFileOptions $options = null): PendingFile
 FileMagic::text(string $text): PendingFile
@@ -20,6 +21,9 @@ FileMagic::csv(iterable $rows): PendingFile
 - `fromPath()`：接受應用程式選擇的可讀本機路徑。
 - `fromContent()`：接受文字或二進位內容。`$originalFilename` 與 `$mimeType` 是選用的
   來源資訊，儲存類型仍以內容為準。
+- `fromGeneratedContent()`：接受應用程式產生的 bytes。非 `null` MIME type 具有 Symfony
+  extension mapping 時，會直接用於 MIME 政策與副檔名；MIME 為 `null` 或無 mapping 時委派給
+  `fromContent()`。完整 `$contents` 已位於 PHP 記憶體。
 - `fromBase64()`：接受 Base64 文字或 Base64 Data URI。
 - `fromUrl()`：下載 HTTP(S) 檔案；`$options` 可調整這次下載的規則。
 - `text()`、`json()`、`csv()`：產生可以像一般檔案一樣儲存的內容。

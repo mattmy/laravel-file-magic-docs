@@ -49,6 +49,28 @@ $file = FileMagic::fromContent(
 
 傳入的 MIME type 只會被視為來源提示。實際儲存的 MIME type 與副檔名會根據檔案內容重新偵測。
 
+由應用程式產生、且應用程式能保證格式的內容，可以提供可信任 MIME type：
+
+```php
+$file = FileMagic::fromGeneratedContent(
+    contents: $dxfContents,
+    originalFilename: 'drawing.dxf',
+    mimeType: 'image/vnd.dxf',
+)->named('drawing')->store();
+```
+
+當 Symfony 無法識別非 `null` MIME type 時，會委派給 `fromContent()`，由 `finfo` 依內容判斷；
+省略 MIME 時也會走一般內容偵測。
+非應用程式產生的 bytes 建議使用一般來源入口：
+
+```php
+// 不安全：request bytes 與 MIME header 都不可信任。
+FileMagic::fromGeneratedContent($request->getContent(), null, $request->header('Content-Type'));
+```
+
+完整 `$contents` 字串在呼叫前就已位於 PHP 記憶體。內容可能接近 worker 記憶體上限時，請改用
+upload、path 或 remote source。
+
 ### 一般 Base64
 
 ```php
