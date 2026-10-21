@@ -6,7 +6,7 @@
 `RemoteDownloadUnavailable`；上傳、本機來源、產生文件及既有檔案操作仍可使用。
 可以執行 `php --ri curl` 確認 CLI 環境。
 
-`fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。預設只接受
+`fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。下載會在 `store()` 才開始。預設只接受
 HTTPS，而且會驗證 TLS certificate：
 
 ```php
@@ -69,7 +69,7 @@ $file = FileMagic::fromUrl(
 | `allowHttp` | `bool` | `false` | 明確允許未加密 HTTP |
 | `allowHtml` | `bool` | `false` | 允許偵測為 HTML 或 XHTML 的內容 |
 | `connectTimeoutSeconds` | `int` | `5` | 連線逾時，必須大於零 |
-| `timeoutSeconds` | `int` | `30` | 完整下載逾時，不得小於連線逾時 |
+| `timeoutSeconds` | `int` | `30` | 每次 HTTP 請求的逾時，不得小於連線逾時 |
 | `maxRedirects` | `int` | `3` | `0` 至 `10`，每一跳都重新驗證 |
 | `allowedHosts` | `list<string>` | `[]` | 精確 host allowlist；空陣列允許通過檢查的 public host |
 | `allowedPorts` | `list<int>` | `[80, 443]` | 不可為空，每個值必須介於 `1` 至 `65535` |
@@ -142,7 +142,7 @@ $file = FileMagic::fromUrl(
     ->store();
 ```
 
-允許後會使用實際 HTML MIME 與 `.html` 儲存。HTML 從應用程式同源顯示時可能執行
+允許後會依偵測到的 MIME type 決定副檔名，例如 HTML 的 `.html` 或 XHTML 的 `.xhtml`。HTML 從應用程式同源顯示時可能執行
 script；除非應用程式會隔離並清理內容，否則應保持 private 並以 attachment 下載。
 `allowHtml: true` 只會略過遠端 HTML 專用的拒絕規則；一般的
 `allowed_mime_types`、`blocked_mime_types`、`allowMimeTypes()` 與
@@ -158,8 +158,12 @@ FileMagic 會封鎖 local、private、reserved 與 cloud metadata destinations�
 內容判斷。`Content-Length` 可提前拒絕過大回應，但實際串流 bytes 仍一定受到
 `maxSize()` 或全域 `max_size` 限制。
 
-遠端下載會使用接近下載檔案大小的本機暫存空間，完成前也會持續占用目前的 PHP
-worker。大型或緩慢下載建議使用 queue；正式環境仍應搭配 outbound firewall。
+下載暫存檔與後續來源快照可能同時存在，未處理圖片時就可能需要接近下載大小兩倍的
+本機空間；圖片處理或覆寫還會增加用量。整個 `store()` 期間都會占用 PHP worker。
+`timeoutSeconds` 是每次 HTTP 請求的上限，重新導向會各自計時，並非整次匯入的總上限。
+
+大型或緩慢匯入可由應用程式放入 queue job 執行；FileMagic 本身不會派送工作。
+正式環境仍應搭配對外連線防火牆。
 
 儲存完成不代表內容一定無惡意。處理不可信任或高風險來源時，建議使用 private
 visibility、attachment download、MIME allowlist、`X-Content-Type-Options: nosniff`

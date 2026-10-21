@@ -2,38 +2,48 @@
 
 ## Performance
 
+Each `store()` attempt reads the original source once into a bounded local snapshot. Inspection,
+image processing, and writing use those captured bytes, avoiding source changes after inspection.
+Even a local source needs this extra temporary space.
+
+Budget for resources that can coexist: the source snapshot, Base64 decoding or remote-download
+file, processed-image snapshot, and old-object backup for an overwrite. These costs add up.
+
 - `contents()` loads the complete file into memory. Use `readStream()` for large files and
   close the returned stream after use.
 - Oversized Base64 is rejected from decoded size before decoding. Valid Base64 is decoded in
   bounded chunks into a temporary stream, so the encoded input remains in memory while decoded
   bytes require temporary disk space. Prefer uploads, paths, or remote sources for large inputs.
 - `csv()` consumes its iterable immediately and fully materializes the generated output in PHP
-  memory before returning `PendingFile`. It has no separate output limit; use another source
-  workflow when the complete CSV may approach the worker's memory limit.
+  memory before returning `PendingFile`. A later `maxSize()` does not limit generation memory.
+  For large exports, stream to a local file in application code, then use `fromPath()`.
 - Source size and MIME rules are applied before image processing, but accepted images can still
   need much more memory than their compressed size. Test with the largest dimensions your
   application accepts.
 - `Overwrite` needs local temporary space close to the existing file size and takes longer
   than normal storage. Prefer `Unique` unless the path must stay the same.
 - When collision locking is enabled, stores, batch deletion, and audit cleanup wait for canonical
-  disk/path locks. Multi-path mutations acquire locks serially, so size the lease for lock
-  acquisition plus the slowest complete mutation and monitor timeouts.
+  disk/path locks. For N paths, acquisition can approach `N × collision_lock.wait_seconds`.
+  Leases do not renew automatically; allow time to acquire every lock and finish the operation,
+  and monitor timeouts.
 - ZIP downloads need temporary space for the source data and ZIP archive. Set suitable
   `zip.max_files` and `zip.max_size` limits.
-- Remote imports use local temporary space close to the downloaded size and keep the current
-  PHP worker busy until the download finishes. Set connection and total timeouts, and use a
-  queue for large or slow imports.
+- Remote download files and source snapshots can coexist, using close to twice the downloaded
+  size before other processing. The worker stays busy throughout storage. Timeouts apply per
+  HTTP request; run large or slow imports from an application queue job.
 - Pass multiple targets to `find()` instead of repeating single lookups. Use
   `FileQuery::delete()` for batch deletion.
 - `file-magic:audit` checks every selected record on storage. Remote disks can add network
-  latency and request charges; `--chunk` limits database memory but not storage checks.
+  latency and request charges; `--chunk` limits batch memory, not storage checks. Cleanup rechecks
+  initially missing records with unchanged identities.
+- `urls()` also makes an existence check per file; budget for these extra remote requests.
 
 Measure memory, temporary disk space, execution time, and remote request cost with the
 largest files and batches your application accepts.
 
 ## Security
 
-- Authorize every store, read, URL, download, ZIP, and delete operation in your application.
+- Authorize every store, read, URL, download, ZIP, delete, and audit-cleanup operation in your application.
 - Keep Laravel request validation in front of uploaded files.
 - Treat original names, client MIME values, metadata, remote content, and stored bytes as
   untrusted data.

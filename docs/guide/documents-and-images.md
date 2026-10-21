@@ -41,9 +41,9 @@ $file = FileMagic::csv([
 Associative rows use the first row's keys as a header. List rows do not generate a header. Every row must use the same keys in the same order, and every value must be scalar or `null`. CSV uses UTF-8 without a BOM, comma delimiters, double-quote enclosures, and CRLF line endings.
 
 `csv()` consumes the iterable immediately and fully materializes the generated output in PHP
-memory before returning a `PendingFile`. There is no separate CSV output limit, so use it only
-when the complete generated CSV fits within the worker's memory limit; prefer another source
-workflow for large exports.
+memory before returning a `PendingFile`. There is no separate CSV output limit, and a later
+`maxSize()` cannot limit memory used while generating the CSV. For large exports, have your
+application stream the CSV to a local file, then store it with `fromPath()`.
 
 All three methods return `PendingFile`, so disk, directory, filename, visibility, collision,
 owner, metadata, MIME, and size options remain available. Call `store()` to save the document;
@@ -74,7 +74,15 @@ $file = FileMagic::fromUpload($image)
     ->store();
 ```
 
-JPEG, PNG, WebP, and BMP are processed when supported by the active driver. `resizeImage()` is best-effort: non-images, GIF, SVG, unsupported formats, and content that Intervention Image cannot decode or encode are stored unchanged without an image-processing error. Invalid resize options and missing Intervention Image, GD, or Imagick still produce explicit exceptions when a supported image requires processing.
+JPEG, PNG, WebP, and BMP are processed when supported by the active driver. Resizing preserves
+aspect ratio and never enlarges an image. Imagick is preferred when both Imagick and GD are available.
+
+`resizeImage()` is best-effort: non-images, GIF, SVG, unsupported formats, and known decoding
+or encoding failures keep their original bytes. Do not use it to prove an upload is a valid image.
+
+Width must be positive and quality must be `1` to `100`, even for non-image sources. Processing
+a supported format without Intervention Image or an available driver throws
+`ImageProcessingUnavailable`. Unexpected system errors are not swallowed.
 
 Size and MIME restrictions are checked against the original source before image decoding or
 resizing, then checked again against changed output before storage. An original image above

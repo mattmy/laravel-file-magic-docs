@@ -31,7 +31,7 @@ php artisan file-magic:audit --chunk=250
 | `--disk` | `?non-empty-string`, default `null` | Audit exactly one disk configured in `filesystems.disks`; omit it to audit all records |
 | `--chunk` | `int<1, 5000>`, default `500` | Number of database records loaded per batch |
 | `--delete-missing-records` | Boolean flag, default `false` | Delete database records whose objects are confirmed missing |
-| `--force` | Boolean flag, default `false` | Skip confirmation in cleanup mode; invalid without `--delete-missing-records` |
+| `--force` | Boolean flag, default `false` | Skip confirmation in cleanup mode; using it alone exits with code `2` |
 
 Invalid option values exit with code `2` before scanning or changing data.
 The command uses the configured FileMagic model, connection, table, and primary key. It checks
@@ -60,9 +60,13 @@ php artisan file-magic:audit --delete-missing-records --force --no-interaction
 `--force` is invalid without `--delete-missing-records`. Storage checks that
 throw exceptions remain unknown and their records are never deleted.
 
-With collision locking enabled, cleanup locks only the initially missing paths, reloads their
-database identity, and checks storage again. Reappeared objects are retained as healthy;
-missing, changed, or unknown records are not deleted.
+Cleanup reloads initially missing records and checks their storage objects again. When locking
+is enabled, both steps run under the path locks. Only an unchanged record whose object is still
+missing is deleted.
+
+A reappeared object is retained as healthy. A record already removed is skipped and does not
+count as deleted. A changed disk, path, or location identity, or an unknown storage state,
+preserves the record and counts as failed.
 
 Cleanup does not dispatch each model's Eloquent `deleting` or `deleted` events. Do not use
 cleanup when your application requires those events for each removed record.
@@ -73,7 +77,8 @@ The audit performs one storage existence check for every selected database recor
 other remote disks, these checks can add network latency and billable request charges.
 
 `--chunk` controls database query size and PHP memory use only. It does not
-reduce the number of storage requests. Use `--disk` to limit scope, choose an
+reduce the number of storage requests. Cleanup adds a second existence check for initially
+missing records whose identity is unchanged. Use `--disk` to limit scope, choose an
 appropriate chunk size, and avoid running the command more often than the
 application needs.
 
@@ -94,7 +99,7 @@ objects.
 
 | Code | Meaning |
 | --- | --- |
-| `0` | No unresolved missing records, or cleanup removed every confirmed missing record |
+| `0` | Audit completed with no missing records, cleanup completed, or the user cancelled cleanup |
 | `1` | The read-only audit completed and missing records remain |
 | `2` | Invalid input, an unknown storage state, a database failure, or partial cleanup |
 

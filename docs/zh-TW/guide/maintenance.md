@@ -1,23 +1,22 @@
 # 一致性稽核
 
-FileMagic 可以比較 stored-file database records 與 Laravel Filesystem objects：
+FileMagic 可以檢查資料庫中的檔案紀錄，確認實體檔案是否仍存在於 Laravel Filesystem：
 
 ```bash
 php artisan file-magic:audit
 ```
 
-指令只會由 database 往 storage 檢查：
+指令會逐筆查看資料庫紀錄，再向 storage 確認：
 
-- `exists()` 成功回傳 `true` 代表 healthy；
-- 回傳 `false` 代表 object missing；
-- 拋出例外代表狀態 unknown，因此保留 record。
+- `exists()` 回傳 `true`：檔案存在，計為 `healthy`。
+- 回傳 `false`：檔案遺失，計為 `missing`。
+- 拋出例外：無法確認狀態，計為 `failed` 並保留紀錄。
 
-它不會列舉 storage、不會尋找沒有 database record 的 objects、不會刪除實體檔案，
-也不會重建缺失的 object。
+它不會掃描 storage 中沒有紀錄的檔案，也不會刪除或重建任何實體檔案。
 
 ## 唯讀稽核
 
-預設模式不會修改 database 或 storage：
+預設模式不會修改資料庫或 storage：
 
 ```bash
 php artisan file-magic:audit
@@ -27,69 +26,71 @@ php artisan file-magic:audit --chunk=250
 
 | Option | 型別與預設 | 行為 |
 | --- | --- | --- |
-| `--disk` | `?non-empty-string`，預設 `null` | 只稽核一個已設定於 `filesystems.disks` 的 disk；省略時稽核全部 records |
-| `--chunk` | `int<1, 5000>`，預設 `500` | 每批載入的 database records 數量 |
-| `--delete-missing-records` | Boolean flag，預設 `false` | 刪除已確認 object 缺失的 database records |
-| `--force` | Boolean flag，預設 `false` | 在清理模式略過確認；未搭配 `--delete-missing-records` 時無效 |
+| `--disk` | `?non-empty-string`，預設 `null` | 只稽核一個已設定於 `filesystems.disks` 的 disk；省略時稽核全部紀錄 |
+| `--chunk` | `int<1, 5000>`，預設 `500` | 每批載入的資料庫紀錄數 |
+| `--delete-missing-records` | Boolean flag，預設 `false` | 刪除已確認遺失檔案的資料庫紀錄 |
+| `--force` | Boolean flag，預設 `false` | 在清理模式略過確認；單獨使用會以 exit code `2` 結束 |
 
-無效的 option 會在掃描或修改資料前以 exit code `2` 結束。指令會使用 FileMagic
-設定的 Model、connection、table 與 primary key。即使 Model 有 global scopes，仍會
-檢查全部 records；需要縮小範圍時請使用 `--disk`。
+無效選項會在掃描或修改資料前以 exit code `2` 結束。指令會使用 FileMagic 設定的
+Model、連線、資料表與主鍵。即使 Model 有全域 scope，仍會檢查全部紀錄；
+需要縮小範圍時請使用 `--disk`。
 
-每筆 missing finding 只顯示 database key、disk 與 storage 相對 path。最後摘要會
+每筆遺失結果只顯示資料庫主鍵、disk 與 storage 相對路徑。最後摘要會
 列出 `checked`、`healthy`、`missing`、`deleted` 及 `failed`。
 
-## 清理 missing records
+## 清理遺失檔案的紀錄
 
-刪除已確認缺少 storage object 的 database records：
+要刪除已確認遺失檔案的資料庫紀錄，可執行：
 
 ```bash
 php artisan file-magic:audit --delete-missing-records
 ```
 
-互動執行會在掃描前要求確認；拒絕時不掃描、不修改資料並正常結束。非互動環境必須
-明確承擔風險：
+互動執行會在掃描前要求確認；拒絕時不掃描、不修改資料。排程或 CI 等非互動環境必須
+明確加上 `--force`，否則指令會拒絕執行：
 
 ```bash
 php artisan file-magic:audit --delete-missing-records --force --no-interaction
 ```
 
 `--force` 沒有搭配 `--delete-missing-records` 時屬於無效輸入。Storage 檢查拋出
-例外時仍屬於 unknown，絕不刪除該 record。
+例外時仍代表狀態不明，不會刪除該紀錄。
 
-啟用 collision lock 時，cleanup 只鎖定初步判定 missing 的 paths，接著重新載入 database
-identity 並再次檢查 storage。重新出現的 object 會保留並計為 healthy；record 消失、identity
-改變或狀態 unknown 時都不會刪除。
+清理會先重新查詢初步判定遺失的紀錄，再檢查一次實體檔案。啟用路徑鎖定時，
+這兩步會在鎖內進行。只有紀錄身分相同、檔案仍遺失時才刪除紀錄。
 
-清理不會逐筆觸發 Eloquent `deleting` 或 `deleted` model events。應用程式需要為每筆
-移除紀錄執行這些 events 時，不要使用此清理功能。
+檔案重新出現會保留紀錄並計為 `healthy`；紀錄已消失時略過，不計入 `deleted`；
+disk、路徑或識別值改變，或無法確認檔案狀態時，保留紀錄並計為 `failed`。
+
+清理採批次刪除，不會逐筆觸發 Eloquent `deleting` 或 `deleted` 事件。
+如果應用程式仰賴這些事件執行後續工作，請另行安排清理流程。
 
 ## 成本、效能與一致性
 
-稽核會對每筆選定的 database record 執行一次 storage existence check。使用 S3 或
-其他遠端 disk 時，這些 checks 可能增加網路延遲與可計費的 request 費用。
+唯讀稽核會對每筆紀錄檢查一次實體檔案是否存在。使用 S3 或其他遠端 disk 時，
+這些檢查可能增加等待時間與請求費用。
 
-`--chunk` 只控制 database query 大小與 PHP memory 使用量，不會減少 storage
-requests 數量。請使用 `--disk` 限制範圍、選擇適當 chunk size，並避免以超過實際
-需求的頻率執行。
+`--chunk` 只控制每批資料量與 PHP 記憶體用量，不會減少 storage 請求數。
+清理模式會對身分未變的初步遺失紀錄再檢查一次，因此會增加請求數。
+請用 `--disk` 限制範圍，依實際需求選擇批次大小與執行頻率。
 
-唯讀結果是檢查當下的觀察，不是 database 與 storage 共用的原子快照。啟用 lock 的 cleanup
-會在共享 path lock 內重新確認狀態，避免 FileMagic store/delete race；但直接刪除 Model、外部
-storage writer、不同 cache backend，以及超過 lease 的 operation 仍不在保證範圍內。
+唯讀結果只代表各筆資料被檢查當下的狀態。啟用路徑鎖定後，清理會在鎖內重新確認，
+與 FileMagic 的儲存及批次刪除互相協調。直接刪除 Model、外部寫入、使用不同快取後端，
+或超過鎖有效期限的操作，都不受這項保護。
 
-Storage、網路、adapter 或權限例外都會被視為 unknown failure，而不是 missing。
-指令會保留相關 records 並回傳 exit code `2`。
+Storage、網路、adapter 或權限錯誤都代表無法確認狀態，不代表檔案遺失。
+指令會保留相關紀錄，並以 exit code `2` 結束。
 
-清理不是全部成功才生效。發生 database error 時，指令會停止並回傳 exit code `2`，
-但先前處理的 records 可能已經刪除。指令永遠不會刪除 storage objects。
+清理不是全部成功才生效。發生資料庫錯誤時，指令會停止並以 exit code `2` 結束，
+先前批次已刪除的紀錄不會還原。實體檔案不會被刪除。
 
-## Exit codes
+## 結束代碼
 
 | Code | 意義 |
 | --- | --- |
-| `0` | 沒有尚未解決的 missing records，或清理已刪除全部確認 missing 的 records |
-| `1` | 唯讀稽核完成，但仍有 missing records |
-| `2` | 輸入無效、storage 狀態 unknown、database 失敗或只完成部分清理 |
+| `0` | 稽核完成且無遺失紀錄、清理完成，或使用者取消清理 |
+| `1` | 唯讀稽核完成，但仍有遺失檔案的紀錄 |
+| `2` | 輸入無效、無法確認檔案狀態、資料庫失敗或只完成部分清理 |
 
 自動化流程只需要 exit code 時可以使用 `--quiet`。
 
@@ -105,6 +106,6 @@ Schedule::command('file-magic:audit --disk=s3')
     ->withoutOverlapping();
 ```
 
-遠端稽核可能比預期耗時，因此應使用 `withoutOverlapping()`。多伺服器環境可以搭配
-shared cache driver 考慮使用 `onOneServer()`。請先衡量 record 數量、遠端 request
-延遲與供應商費用，再決定執行頻率。
+遠端稽核可能耗時較久，可用 `withoutOverlapping()` 避免同一工作重疊執行。
+多伺服器環境可搭配共享快取與 `onOneServer()`。請先衡量紀錄數量、遠端請求延遲
+及供應商費用，再決定執行頻率。

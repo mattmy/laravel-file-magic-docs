@@ -40,12 +40,18 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-All three forms preserve input order and remove duplicate records. A model target is a selector:
-FileMagic runs one scoped query for every non-empty `find()` call and returns the current canonical
-record instead of reusing the supplied instance. Empty arrays and Collections return an empty
-`Illuminate\Support\Collection` without a query.
+All three forms preserve input order and remove duplicate records. A model target only identifies
+the record. The query runs when you first request a result or operation, not when you call `find()`.
+For non-empty targets, it fetches current records in one query using the configured model's global
+scopes. It does not reuse the supplied model's attributes or relations. Each `FileQuery` caches its
+results, so later operations on that instance do not repeat the lookup. Empty arrays and Collections
+return an empty `Illuminate\Support\Collection` without a query.
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
+
+UUIDs are case-insensitive. Numeric strings such as `"123"` are not integer IDs; convert and
+validate request values before passing them. A model target must match the configured file model,
+connection, table, and primary-key name, and its primary key must not be dirty.
 
 Valid IDs and UUIDs without a matching record are omitted. `one()` therefore returns
 the first resolved `StoredFile` or `null`, while operations that require a file,
@@ -75,7 +81,8 @@ $urls = FileMagic::find([
 ])->urls();
 ```
 
-`urls()` returns an `Illuminate\Support\Collection<int|string, string>` keyed by model key. Files that do not exist on disk are omitted.
+`urls()` returns an `Illuminate\Support\Collection<int|string, string>` keyed by model key.
+Files that do not exist on disk are omitted. This performs one storage existence check per resolved record, which can add requests and latency on remote disks.
 
 The disk must support the requested operation. Local temporary URLs require `serve => true`; cloud disks require their normal credentials.
 
@@ -100,7 +107,7 @@ try {
         $chunk = \fread($stream, 8192);
 
         if ($chunk === false) {
-            break;
+            throw new \RuntimeException('The file stream could not be read.');
         }
 
         // Consume the chunk.
@@ -110,7 +117,8 @@ try {
 }
 ```
 
-The caller owns and must close the returned stream.
+The caller owns and must close the returned stream. `exists()` throws `FileNotFound` when no
+database record matches; it returns `false` only when a matched record's physical file is missing.
 
 
 ## Download
@@ -120,6 +128,7 @@ return FileMagic::find($target)->download();
 return FileMagic::find($target)->download('invoice-2026.pdf');
 ```
 
-Laravel streams the response using the detected MIME type.
+Laravel streams the response using the record's MIME type: detected from ordinary content, or
+declared by a trusted generated source. Changing the download name does not convert the content.
 
 

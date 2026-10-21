@@ -50,9 +50,10 @@ $deleted = FileMagic::find($targets)->delete();
 Batch deletion removes records only for physical files confirmed as deleted or already
 missing. Records for files that still exist or cannot be checked remain available for retry.
 
-When collision locking is enabled, FileMagic locks every distinct candidate path in canonical
-order and reloads the records before touching storage. Missing or changed records cannot direct
-deletion at stale paths.
+FileMagic reloads records before deletion to avoid stale paths. Missing records are skipped;
+a changed disk, path, or location identity preserves the record and produces `PartialFileDeletion`.
+With collision locking enabled, it also acquires every candidate path lock in a stable order
+and holds them through the operation.
 
 If only part of the operation completes, FileMagic first persists the confirmed state and
 then throws `PartialFileDeletion`. Use `deletedCount()`, `failedCount()`, and `failedKeys()`
@@ -62,5 +63,9 @@ already missing objects are treated as deleted.
 A batch is not all-or-nothing because storage and the database cannot share one transaction.
 Earlier files may already be deleted when a later file fails. Batch deletion does not create
 backups.
+
+Success returns the number of deleted records; an empty result returns `0`. A database deletion
+failure or affected-row mismatch throws `FileRecordFailed`, even though physical files may
+already be gone. Batch deletion does not dispatch individual Eloquent `deleting` or `deleted` events.
 
 

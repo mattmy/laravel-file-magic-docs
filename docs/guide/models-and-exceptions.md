@@ -18,11 +18,16 @@ final class StoredFile extends BaseStoredFile
 'table' => 'assets',
 ```
 
-The custom model must extend the package model and set its `$table` to exactly the configured
-`table` value. FileMagic validates this before storing, finding, or deleting files, then uses
-the model's connection and primary key. Batch deletion does not apply global
-scopes or dispatch each model's `deleting` and `deleted` events; use single-model deletion
-when your application depends on those scopes or events.
+The custom model must extend the package `StoredFile` and set `$table` to match `file-magic.table`.
+Storage, lookup, batch deletion, and audits use its connection, table, and primary key.
+
+`find()` applies global scopes. Batch deletion reloads and deletes only the resolved primary keys
+using unscoped queries; it does not expand the selection or dispatch individual `deleting` or
+`deleted` events. Audits bypass global scopes; see [Consistency audits](/guide/maintenance).
+
+If you need individual model events, explicitly retrieve the model and call `$file->delete()`.
+That path does not use shared path locks or compensate if the physical deletion succeeds but
+the database deletion fails. Use `FileMagic::find(...)->delete()` for coordinated deletion.
 
 Configure a custom table before publishing the migration. If already deployed, create a new
 migration rather than editing migration history.
@@ -50,14 +55,15 @@ All exceptions extend `FileMagicException`.
 | `RemoteDownloadFailed` | DNS, TLS, connection, redirect, HTTP, or temporary download failure |
 | `InvalidFileName` | Unsafe or reserved name |
 | `InvalidStoragePath` | Unsafe directory |
+| `InvalidFileOwner` | Owner is not persisted or has no integer or non-empty string key |
 | `InvalidFileTarget` | Invalid ID, UUID, model, array, or Collection target |
 | `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` or uses a different table |
 | `FileTooLarge` | Byte limit exceeded |
 | `DisallowedMimeType` | MIME type rejected |
-| `FileWriteFailed` | Storage write, collision, replacement, or deletion failure |
-| `FileRecordFailed` | Database persistence failure |
-| `FileRecoveryFailed` | An overwrite failed and the original object could not be restored |
-| `PartialFileDeletion` | Only confirmed missing objects and their records were deleted |
+| `FileWriteFailed` | Write, backup, collision, or path-lock acquisition failure |
+| `FileRecordFailed` | Record save cancelled by an event, persistence or revalidation failure, or deleted-count mismatch |
+| `FileRecoveryFailed` | An operation failed and restoring the old object or removing the new object also failed |
+| `PartialFileDeletion` | A batch deletion has unresolved items, possibly with zero deletions |
 | `FileNotFound` | No record matched, or physical content or stream is unavailable |
 | `ImageProcessingUnavailable` | Missing image dependency or driver while processing a supported image |
 | `ZipCreationUnavailable` | PHP `ext-zip` is unavailable |
@@ -78,6 +84,8 @@ try {
 }
 ```
 
-The package deliberately does not choose HTTP status codes or response formats.
+The package does not choose HTTP status codes or response formats. This table lists FileMagic
+domain exceptions. Some read, URL, and storage operations can still throw underlying adapter
+exceptions; catching `FileMagicException` does not catch every runtime failure.
 
 

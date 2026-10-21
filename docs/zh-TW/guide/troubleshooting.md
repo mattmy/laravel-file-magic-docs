@@ -22,7 +22,8 @@ driver。
 
 ## 實體檔案被 FileMagic 以外的系統移除
 
-`existsOnDisk()` 會回傳 `false`，`contents()` 與 `readStream()` 會拋出 `FileNotFound`。
+`existsOnDisk()` 會回傳 `false`。`contents()` 與 `readStream()` 在 adapter 回傳內容不存在
+時會拋出 `FileNotFound`；若 disk 設為拋出讀取例外，也可能收到底層 storage 例外。
 可以使用[一致性稽核](/zh-TW/guide/maintenance)找出缺少實體檔案的紀錄。
 
 ## ZIP 下載無法使用

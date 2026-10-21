@@ -1,7 +1,7 @@
 # 開始使用
 
 FileMagic 讓 Laravel 應用程式能用同一套流程接收、儲存、查詢、下載與刪除檔案。
-儲存上傳檔案後，會得到一筆可透過 Eloquent 查詢的檔案紀錄。
+儲存成功後會取得一筆 `StoredFile` 紀錄，之後可透過 `FileMagic::find()` 讀取或操作檔案。
 
 ## 系統需求
 
@@ -24,7 +24,7 @@ FileMagic 使用 `ext-fileinfo` 取得儲存檔案的類型。Client 回報的�
 
 圖片縮放功能另外需要：
 
-- `intervention/image` 4.0 或以上
+- `intervention/image` 4.x
 - PHP GD 或 Imagick extension
 
 ZIP 批次下載另外需要 PHP `ext-zip`。
@@ -48,8 +48,9 @@ php artisan migrate
 ## 設定
 
 發佈並執行 migration 後，FileMagic 可以直接使用預設設定。預設會在
-`FILESYSTEM_DISK` 的 `files` 目錄儲存 private 檔案、限制檔案大小為 100 MiB，並在
-檔名碰撞時加入不重複的 suffix。
+`FILE_MAGIC_DISK` 指定的 disk 下，以 `files` 為目錄、`private` 為可見性，
+限制檔案大小為 100 MiB，檔名重複時會加入隨機字串。未設定 `FILE_MAGIC_DISK` 時，
+依序使用 `FILESYSTEM_DISK` 或 `local`。
 
 只有需要調整預設值時才需發佈設定檔：
 
@@ -83,6 +84,9 @@ Route::post('/documents', function (Request $request): array {
     ];
 });
 ```
+
+對外開放這個 route 前，請先加入應用程式需要的登入與上傳權限檢查。FileMagic 不會替你
+判斷誰能儲存或存取檔案。
 
 只有來源方法與 `store()` 是必要呼叫。中間可以視單一檔案的需求覆寫 storage、檔名、
 驗證、owner 與圖片選項。

@@ -7,7 +7,8 @@ This optional feature requires PHP `ext-curl`. Without it, `store()` for a remot
 operations remain available. Verify your CLI environment with `php --ri curl`.
 
 `fromUrl()` accepts absolute HTTP or HTTPS file URLs and returns the normal
-`PendingFile`. HTTPS is the default and TLS certificate verification is enabled:
+`PendingFile`. The download starts only at `store()`. HTTPS is the default and TLS certificate
+verification is enabled:
 
 ```php
 use Mattmy\FileMagic\Facades\FileMagic;
@@ -71,7 +72,7 @@ timeout required by the request.
 | `allowHttp` | `bool` | `false` | Explicitly permits unencrypted HTTP |
 | `allowHtml` | `bool` | `false` | Allows detected HTML or XHTML content |
 | `connectTimeoutSeconds` | `int` | `5` | Connection timeout; must be greater than zero |
-| `timeoutSeconds` | `int` | `30` | Total timeout; must be at least the connection timeout |
+| `timeoutSeconds` | `int` | `30` | Timeout per HTTP request; must be at least the connection timeout |
 | `maxRedirects` | `int` | `3` | Redirect limit from `0` to `10`; every hop is revalidated |
 | `allowedHosts` | `list<string>` | `[]` | Exact hostname allowlist; empty permits validated public hosts |
 | `allowedPorts` | `list<int>` | `[80, 443]` | Non-empty port allowlist; values must be between `1` and `65535` |
@@ -148,8 +149,8 @@ $file = FileMagic::fromUrl(
     ->store();
 ```
 
-Allowed HTML is stored with its detected HTML MIME type and `.html` extension. HTML
-can execute script when served from an application origin, so keep it private and
+Allowed content uses its detected MIME type and mapped extension, such as `.html` for HTML
+or `.xhtml` for XHTML. HTML can execute script when served from an application origin, so keep it private and
 download it as an attachment unless the application sanitizes and isolates it.
 `allowHtml: true` only removes the remote HTML-specific rejection; the normal
 `allowed_mime_types`, `blocked_mime_types`, `allowMimeTypes()`, and
@@ -166,9 +167,13 @@ come from the downloaded bytes. `Content-Length` may reject an oversized respons
 early, but the actual streamed bytes are always limited by `maxSize()` or the global
 `max_size`.
 
-Remote downloads use local temporary space close to the downloaded size and keep the current
-PHP worker busy until the download finishes. Use a queue for large or slow downloads, and
-configure application and network egress controls as additional production boundaries.
+The download file and source snapshot can coexist, requiring close to twice the downloaded size
+in local temporary space even without image processing. Images and overwrites add more. The PHP
+worker stays busy throughout `store()`. `timeoutSeconds` applies to each HTTP request; redirects
+start another request, so it is not a deadline for the whole import.
+
+For large or slow imports, call FileMagic from an application queue job; the package does not
+dispatch jobs itself. Configure network egress controls as an additional production boundary.
 
 Stored bytes are not automatically safe. Prefer private visibility, attachment
 downloads, MIME allowlists, `X-Content-Type-Options: nosniff`, and an antivirus or

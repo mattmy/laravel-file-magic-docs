@@ -23,7 +23,7 @@ Without it, all other features remain available, while storing a remote source
 throws `RemoteDownloadUnavailable`. Verify the extension used by your CLI with
 `php --ri curl`.
 
-Image resizing additionally needs `intervention/image` 4.0 or later and PHP GD
+Image resizing additionally needs `intervention/image` 4.x and PHP GD
 or Imagick. ZIP downloads additionally need PHP `ext-zip`.
 
 
@@ -38,7 +38,8 @@ php artisan migrate
 ## Configuration
 
 FileMagic works with its defaults after the migration is published and run. By default, it stores
-private files in the `files` directory on `FILESYSTEM_DISK`, limits files to 100 MiB, and gives
+private files in the `files` directory on `FILE_MAGIC_DISK` (falling back to `FILESYSTEM_DISK`,
+then `local`), limits files to 100 MiB, and gives
 colliding filenames a unique suffix.
 
 Publish the configuration only when you need to change these defaults:
@@ -73,6 +74,9 @@ Route::post('/documents', function (Request $request): array {
     ];
 });
 ```
+
+Add your application's authentication and upload authorization before exposing this route.
+FileMagic does not decide who may store or access a file.
 
 The source method and `store()` are the only required calls. Methods between them can override
 storage, naming, validation, ownership, and image options for that file.

@@ -22,7 +22,9 @@ WebP, and BMP.
 
 ## A physical file was removed outside FileMagic
 
-`existsOnDisk()` returns `false`. `contents()` and `readStream()` throw `FileNotFound`.
+`existsOnDisk()` returns `false`. `contents()` and `readStream()` throw `FileNotFound` when
+the adapter reports missing content; disks configured to throw read errors may instead raise
+an underlying storage exception.
 Use the [consistency audit](/guide/maintenance) to find records whose files are missing.
 
 ## ZIP downloads are unavailable

@@ -1,6 +1,6 @@
 # 查詢檔案
 
-## 查詢檔案
+## 選擇要操作的檔案
 
 一般檔案查詢全部透過唯一的 `find()` 入口。它可以接受正整數 ID、UUID 或已存在的 `StoredFile` Model：
 
@@ -40,11 +40,17 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-三種形式都會保留輸入順序並移除重複紀錄。Model target 只作為 selector：每個非空的
-`find()` 都會執行一筆套用 scope 的查詢，回傳目前的 canonical record，不會直接重用傳入的
-instance。空 array 或 Collection 不查詢，並回傳空的 `Illuminate\Support\Collection`。
+三種形式都會保留輸入順序並移除重複紀錄。`find()` 本身不查詢資料庫，而是在第一次
+取得結果或執行操作時，才用一筆查詢取得目前的紀錄，並套用設定 Model 的全域 scope。
+傳入的 Model 只用來識別紀錄，不會沿用它的其他屬性或已載入關聯。
+
+同一個 `FileQuery` 會快取查詢結果，後續操作不會重查。空 array 或 Collection 不查詢，
+並回傳空的 `Illuminate\Support\Collection`。
 
 Array 與 Collection 必須是一維結構，每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。無效元素會拋出 `InvalidFileTarget`，不會被靜默移除。
+
+UUID 不區分大小寫。`"123"` 這類數字字串不算整數 ID，請先驗證並轉換 request 的值。
+Model 必須符合設定的檔案 Model、連線、資料表與主鍵名稱，且主鍵不可有未儲存的修改。
 
 合法但找不到紀錄的 ID 或 UUID 會從結果中省略，因此 `one()` 會回傳第一個符合的
 `StoredFile` 或 `null`；`download()`、`contents()` 等必須取得檔案的操作在沒有任何
@@ -85,7 +91,8 @@ $urls = FileMagic::find([
 ])->urls();
 ```
 
-`urls()` 會回傳以 Model key 為索引的 `Illuminate\Support\Collection<int|string, string>`。實體檔案不存在於 disk 的紀錄不會包含在結果中。
+`urls()` 會回傳以 Model key 為索引的 `Illuminate\Support\Collection<int|string, string>`。實體檔案不存在於 disk 的紀錄不會包含在結果中。每筆結果都會檢查一次 storage，
+使用遠端 disk 時會增加請求數與等待時間。
 
 使用的 disk 必須支援對應的 URL 操作。本機 temporary URL 需要在 Laravel local disk 設定 `serve => true`；S3 等 cloud disk 則需要完成正常的憑證及 bucket 設定。
 
@@ -118,7 +125,7 @@ try {
         $chunk = \fread($stream, 8192);
 
         if ($chunk === false) {
-            break;
+            throw new \RuntimeException('The file stream could not be read.');
         }
 
         // 處理目前讀取到的內容。
@@ -128,7 +135,8 @@ try {
 }
 ```
 
-呼叫端擁有 `readStream()` 回傳的 stream，並且必須負責關閉它。
+呼叫端必須負責關閉 `readStream()` 回傳的串流。`exists()` 在找不到資料庫紀錄時
+會拋出 `FileNotFound`；只有紀錄存在、實體檔案遺失時才回傳 `false`。
 
 
 ## 下載
@@ -145,6 +153,7 @@ return FileMagic::find($target)->download();
 return FileMagic::find($target)->download('invoice-2026.pdf');
 ```
 
-Laravel Filesystem 會以 stream 回傳 response，並使用從內容偵測到的 MIME type。
+Laravel Filesystem 會以串流回傳下載，使用紀錄中的 MIME type：一般來源由內容偵測，
+可信任產物則使用宣告的類型。自訂下載檔名不會轉換檔案格式。
 
 

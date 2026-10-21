@@ -1,7 +1,7 @@
 # API 參考
 
 這裡列出 Laravel 應用程式會使用的方法與欄位。需要完整範例與行為時，可前往各段落
-提供的說明頁面。
+提供的說明頁面。下方程式區塊是方法簽章索引，不是可以直接執行的 PHP 程式。
 
 ## 建立待儲存檔案
 
@@ -23,9 +23,11 @@ FileMagic::csv(iterable $rows): PendingFile
   來源資訊，儲存類型仍以內容為準。
 - `fromGeneratedContent()`：接受應用程式產生的 bytes。非 `null` MIME type 具有 Symfony
   extension mapping 時，會直接用於 MIME 政策與副檔名；MIME 為 `null` 或無 mapping 時委派給
-  `fromContent()`。完整 `$contents` 已位於 PHP 記憶體。
+  `fromContent()`，非 `null` 的值仍只作不可信任提示。原始檔名不會決定 MIME 或儲存名稱；
+  這也不是內容安全認證。完整 `$contents` 已位於 PHP 記憶體，請勿將不可信任來源
+  連同可識別 MIME 傳入此入口。
 - `fromBase64()`：接受 Base64 文字或 Base64 Data URI。
-- `fromUrl()`：下載 HTTP(S) 檔案；`$options` 可調整這次下載的規則。
+- `fromUrl()`：建立 HTTP(S) 來源，在 `store()` 時才下載；`$options` 可調整這次下載的規則。
 - `text()`、`json()`、`csv()`：產生可以像一般檔案一樣儲存的內容。
 
 以上方法都回傳 `PendingFile`。完整說明請看[儲存檔案](/zh-TW/guide/storing-files)、
@@ -49,40 +51,19 @@ $pending->store(): StoredFile
 ```
 
 - `onDisk()`：選擇已設定的 Laravel Filesystem disk，disk 名稱不可為空字串。
-- `inDirectory()`：選擇以 forward slash 表示的 canonical 相對目錄；空字串代表 disk
-  root。不安全或模糊路徑會拋出 `InvalidStoragePath`。
+- `inDirectory()`：選擇以 `/` 分隔、相對於 disk 的目錄；空字串代表根目錄。不安全或模糊路徑會拋出 `InvalidStoragePath`。
 - `named()`：設定不含副檔名的檔名。不安全、保留、空白或超過 200 字元的名稱會拋出
   `InvalidFileName`。
 - `visibility()`：選擇 `FileVisibility::Private` 或 `FileVisibility::Public`。
 - `onCollision()`：路徑已存在時選擇 `Unique`、`Error` 或 `Overwrite`。
 - `maxSize()`：以正整數設定原始輸入與最終儲存結果可接受的最大 bytes。
-- `allowMimeTypes()`：以非空 MIME type strings 組成的 list 限制可接受類型。
-- `blockMimeTypes()`：拒絕 list 中的非空 MIME type strings；list 本身可以是空的。
+- `allowMimeTypes()`：只接受清單中的 MIME type；空清單不額外限制。元素必須是非空字串。
+- `blockMimeTypes()`：拒絕清單中的 MIME type；元素必須是非空字串，清單本身可以為空。
 - `withMetadata()`：將應用程式資料儲存在檔案紀錄的 `metadata` 欄位。
-- `ownedBy()`：將檔案關聯至已儲存的 Eloquent Model。
+- `ownedBy()`：關聯已儲存且主鍵為整數或非空字串的 Eloquent Model，否則拋出 `InvalidFileOwner`。
 - `resizeImage()`：設定支援圖片的最大寬度與輸出品質；參數為 `null` 時使用設定預設值，
-  width 必須為正整數，quality 必須介於 `1` 至 `100`。
+  寬度必須為正整數，品質必須介於 `1` 至 `100`。
 - `store()`：儲存實體檔案並回傳 `StoredFile` 紀錄。
-
-以下方法會回傳 `PendingFile` 目前設定的選項。回傳 `null` 代表尚未單獨設定，
-`store()` 會使用套件預設值。
-
-```php
-$pending->source(): FileSource
-$pending->disk(): ?string
-$pending->directory(): ?string
-$pending->filename(): ?string
-$pending->fileVisibility(): ?FileVisibility
-$pending->collisionPolicy(): ?CollisionPolicy
-$pending->maximumSize(): ?int
-$pending->allowedMimeTypes(): ?array
-$pending->blockedMimeTypes(): ?array
-$pending->metadata(): array
-$pending->owner(): ?Model
-$pending->imageOptions(): ?ImageOptions
-```
-
-`ImageOptions` 提供 public integer 欄位 `maxWidth` 與 `quality`。
 
 ## 尋找檔案
 
@@ -116,11 +97,12 @@ $query->delete(): int
 - `temporaryUrl()`：取得 temporary URL；`$expiration` 為 `null` 時使用設定的有效時間。
 - `contents()`：以 string 取得第一筆符合檔案的完整內容。
 - `readStream()`：取得第一筆符合檔案的 readable stream；使用完畢後必須關閉。
-- `download()`：回傳 stream download；`$name` 可取代下載檔名。
-- `downloadZip()`：將全部符合檔案回傳為 ZIP download；`$name` 設定 ZIP 檔名。
+- `download()`：回傳串流下載；`$name` 可取代下載檔名。
+- `downloadZip()`：將全部符合檔案回傳為 ZIP 下載；`$name` 設定 ZIP 檔名。
 - `delete()`：刪除符合的實體檔案與紀錄，回傳完成刪除的數量。
 
-除了 `one()` 與 `get()`，需要第一筆結果的方法在找不到紀錄時會拋出 `FileNotFound`。
+沒有紀錄時，`one()` 回傳 `null`，`get()` 與 `urls()` 回傳空 Collection，`delete()` 回傳 `0`。
+`downloadZip()` 與所有需要第一筆結果的方法（包括 `exists()`）會拋出 `FileNotFound`。
 
 ## StoredFile 欄位
 
@@ -180,7 +162,7 @@ $file->delete(): ?bool
 | `allowHttp` | `bool` | `false` | 允許未加密 HTTP。 |
 | `allowHtml` | `bool` | `false` | 允許 HTML 與 XHTML 內容。 |
 | `connectTimeoutSeconds` | `int` | `5` | 最長連線時間。 |
-| `timeoutSeconds` | `int` | `30` | 最長完整下載時間。 |
+| `timeoutSeconds` | `int` | `30` | 每次 HTTP 請求的最長秒數。 |
 | `maxRedirects` | `int` | `3` | 最多 redirect 次數，範圍 `0` 至 `10`。 |
 | `allowedHosts` | `list<string>` | `[]` | 精確 host allowlist；空陣列允許符合條件的 public hosts。 |
 | `allowedPorts` | `list<int>` | `[80, 443]` | 允許的連線 ports。 |
@@ -224,5 +206,5 @@ $exception->failedKeys(): array
 $exception->operationFailure(): Throwable
 ```
 
-`FileRecoveryFailed::operationFailure()` 會取得觸發 Overwrite 還原的原始錯誤；
-exception 的 previous error 則是還原失敗原因。
+`FileRecoveryFailed::operationFailure()` 會取得觸發補償的原始錯誤；`getPrevious()` 則是
+舊檔案還原或新檔案清理失敗的原因。
