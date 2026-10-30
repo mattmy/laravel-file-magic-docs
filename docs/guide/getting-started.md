@@ -35,6 +35,12 @@ php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate
 ```
 
+If you need image resizing, also install Intervention Image 4 and enable PHP GD or Imagick:
+
+```bash
+composer require intervention/image:^4.0
+```
+
 ## Configuration
 
 FileMagic works with its defaults after the migration is published and run. By default, it stores

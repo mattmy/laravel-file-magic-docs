@@ -45,6 +45,12 @@ php artisan vendor:publish --tag=file-magic-migrations
 php artisan migrate
 ```
 
+如果需要圖片縮放功能，請另外安裝 Intervention Image 4，並啟用 PHP GD 或 Imagick：
+
+```bash
+composer require intervention/image:^4.0
+```
+
 ## 設定
 
 發佈並執行 migration 後，FileMagic 可以直接使用預設設定。預設會在
