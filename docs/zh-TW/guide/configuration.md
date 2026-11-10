@@ -1,7 +1,6 @@
 # 設定參考
 
-發佈並執行 migration 後，FileMagic 可以直接使用預設設定。只有應用程式需要調整
-storage、驗證、URL、圖片、ZIP 或遠端下載預設值時，才需發佈設定檔：
+要調整預設值，請先發佈 `config/file-magic.php`。
 
 ```bash
 php artisan vendor:publish --tag=file-magic-config
@@ -40,14 +39,9 @@ php artisan vendor:publish --tag=file-magic-config
 省略 `blocked_mime_types` 會保留預設封鎖，明確設為 `[]` 才會取消。
 `allowMimeTypes()` 與 `blockMimeTypes()` 都會取代對應的全域清單，不會合併。
 
-設定值採嚴格型別，並在使用對應功能時驗證。FileMagic 不會轉換字串整數、移除錯誤的
-清單成員，或在設定值無效時回退至預設值。無效值會拋出 `InvalidConfiguration`，並指出
-受影響的 key。未使用的 optional 圖片、ZIP、遠端下載與 temporary URL 設定不會阻擋
-其他操作。
-
-升級前請確認數值設定使用 PHP integer 而非數字字串、清單使用連續整數 keys 並包含正確
-型別、enum-backed 設定完全符合表列值，而且每個指定 disk 都存在於
-`filesystems.disks`。
+FileMagic 會在使用對應功能時驗證設定。數值請用 PHP 整數，清單索引要從 `0` 開始且連續，
+列舉值須與表中所列一致。磁碟名稱必須存在於 `filesystems.disks`。設定無效時會拋出
+`InvalidConfiguration`，並指出哪個設定有誤。
 
 已執行發佈的 migration 後再修改 `table`，不會重新命名既有資料。已部署的應用程式應
 建立新的 migration。更換 `model` 或 `table` 時，另請參考
@@ -55,8 +49,7 @@ php artisan vendor:publish --tag=file-magic-config
 
 ## 啟用檔案路徑鎖定
 
-路徑鎖定預設停用。這時不需要支援鎖定的快取儲存區，但同時儲存或刪除同一路徑仍可能
-互相衝突。將 `collision_lock.enabled` 設為 `true` 即可啟用。
+要協調同一路徑上的寫入與刪除，請將 `collision_lock.enabled` 設為 `true`。路徑鎖定預設關閉。
 
 啟用後，儲存、批次刪除與稽核清理會共用同一套 disk／路徑鎖。批次操作先按固定順序
 取得所有鎖，再重新確認資料庫紀錄。請使用支援 Laravel atomic lock 的快取儲存區，

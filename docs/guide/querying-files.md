@@ -2,7 +2,7 @@
 
 ## Query files
 
-All normal file lookups go through the single `find()` entry point. It accepts a positive integer ID, UUID, or existing `StoredFile` model:
+Pass a positive integer ID, UUID, or saved `StoredFile` model to `find()`.
 
 ```php
 $file = FileMagic::find($id)->one();
@@ -40,12 +40,10 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-All three forms preserve input order and remove duplicate records. A model target only identifies
-the record. The query runs when you first request a result or operation, not when you call `find()`.
-For non-empty targets, it fetches current records in one query using the configured model's global
-scopes. It does not reuse the supplied model's attributes or relations. Each `FileQuery` caches its
-results, so later operations on that instance do not repeat the lookup. Empty arrays and Collections
-return an empty `Illuminate\Support\Collection` without a query.
+All three forms preserve input order and remove duplicates. The first operation on a `FileQuery`
+loads current records in one query with the configured model's global scopes. A supplied model
+contributes only its primary key. Later operations reuse the results. Empty arrays and collections
+need no query.
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
 
@@ -124,8 +122,8 @@ database record matches; it returns `false` only when a matched record's physica
 ## Download
 
 ```php
-return FileMagic::find($target)->download();
-return FileMagic::find($target)->download('invoice-2026.pdf');
+$response = FileMagic::find($target)->download();
+$renamedResponse = FileMagic::find($target)->download('invoice-2026.pdf');
 ```
 
 Laravel streams the response using the record's MIME type: detected from ordinary content, or

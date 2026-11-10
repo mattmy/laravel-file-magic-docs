@@ -2,25 +2,13 @@
 
 ## 儲存上傳檔案
 
-將檔案傳給 FileMagic 前，仍應先在 HTTP 邊界進行 Laravel request validation：
+將 Laravel 的 `UploadedFile` 傳給 `fromUpload()`。
 
 ```php
-use Illuminate\Http\Request;
-use Mattmy\FileMagic\Facades\FileMagic;
-
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'document' => ['required', 'file', 'max:10240'],
-    ]);
-
-    $file = FileMagic::fromUpload($validated['document'])->store();
-
-    return response()->json($file);
-}
+$file = FileMagic::fromUpload($uploadedFile)->store();
 ```
 
-FileMagic 會再次根據檔案內容進行檢查。Laravel request validation 與套件內部檢查保護的是不同的信任邊界，不應省略其中任何一層。
+呼叫 `store()` 時，FileMagic 會套用自己的大小上限，並從檔案內容偵測 MIME 類型。
 
 
 ## 從其他來源儲存
@@ -59,20 +47,14 @@ $file = FileMagic::fromGeneratedContent(
 )->named('drawing')->store();
 ```
 
-當 Symfony 無法識別非 `null` MIME type 時，會委派給 `fromContent()`，由 `finfo` 依內容判斷；
-省略 MIME 時也會走一般內容偵測。未識別的非 `null` MIME 仍只是不可信任的來源提示。
-這裡的「可識別」只代表 Symfony 找得到副檔名對應，不代表內容已通過格式或安全檢查。
-例如 `image/vnd.dxf` 對應 `.dxf`，`application/dxf` 則會回到一般內容偵測。
+Symfony 找得到對應的副檔名時，FileMagic 才會採用傳入的 MIME 類型。例如 `image/vnd.dxf`
+對應 `.dxf`。省略 MIME 或傳入找不到對應的值（如 `application/dxf`）時，會沿用
+`fromContent()` 的內容偵測。找不到對應的值仍只作為來源提示。
 
-非應用程式產生的 bytes 建議使用一般來源入口：
-
-```php
-// 不安全：request bytes 與 MIME header 都不可信任。
-FileMagic::fromGeneratedContent($request->getContent(), null, $request->header('Content-Type'));
-```
-
-完整 `$contents` 字串在呼叫前就已位於 PHP 記憶體。內容可能接近 worker 記憶體上限時，請改用
-upload、path 或 remote source。
+副檔名對應無法確認內容格式或安全性。要儲存 HTTP 請求的原始內容，請使用
+`fromContent($request->getContent())`。請勿把原始內容和請求的 `Content-Type` 標頭一起傳給
+`fromGeneratedContent()`。
+兩種方法的完整 `$contents` 字串都會占用 PHP 記憶體。大型檔案請依來源改用上傳、本機路徑或遠端網址。
 
 ### 一般 Base64
 
@@ -83,8 +65,9 @@ $file = FileMagic::fromBase64(
 )->store();
 ```
 
-Data URI 前綴可有可無。兩種形式都會根據解碼後的內容判斷 MIME type 與副檔名；
-Data URI 宣告的 MIME type 只是不可信任的來源提示。
+可傳入純 Base64，或使用 `data:<mime>;base64,<payload>` 格式。Data URI 若省略 MIME 類型
+或帶有 `charset` 等參數，會拋出 `InvalidBase64`。FileMagic 會依解碼後的內容判斷儲存用的
+MIME 類型與副檔名。
 
 ### Base64 Data URI
 
@@ -95,12 +78,10 @@ $file = FileMagic::fromBase64(
 )->store();
 ```
 
-Base64 必須使用 `base64_encode()` 產生的標準字元與 padding；不接受 URL-safe Base64、
-缺少 padding、空白或換行。格式錯誤會在呼叫 `fromBase64()` 時拋出 `InvalidBase64`。
-
-解碼與大小檢查會在 `store()` 時進行。超限內容會在解碼前拋出 `FileTooLarge`；
-合法內容則分段解碼到暫存串流。編碼後的字串仍占用 PHP 記憶體，解碼後的資料使用
-暫存磁碟空間。輸入很大時，請優先使用上傳檔案或本機路徑。
+請使用 `base64_encode()` 產生的標準字元和填補字元（padding）。若使用 URL-safe Base64、
+缺少填補字元，或含有空白或換行，`fromBase64()` 會拋出 `InvalidBase64`。呼叫 `store()` 時，
+FileMagic 會先檢查解碼後的大小，超出上限就拋出 `FileTooLarge`。解碼會分段寫入暫存檔，
+編碼字串仍占用 PHP 記憶體。大型檔案請優先使用上傳或本機路徑。
 
 
 ## 自訂儲存方式
@@ -142,13 +123,10 @@ CollisionPolicy::Overwrite;
 還需要接近舊檔案大小的本機備份空間。除非 storage path 必須保持不變，
 否則建議使用預設的 `Unique`。如果取代與還原都失敗，會拋出 `FileRecoveryFailed`。
 
-路徑鎖定預設停用，因此同時寫入或刪除仍可能互相衝突。啟用 `collision_lock.enabled` 後，
-FileMagic 會先取得該 disk 與路徑的鎖，再檢查檔案是否存在，並持有至寫入、紀錄儲存與
-必要的刪除或還原補償完成。批次刪除與稽核清理也使用相同的鎖。
-
-這項保護要求所有操作共用同一個快取後端，且在鎖的有效期限內完成；直接刪除 Model
-與外部寫入不受保護。等待超過 `collision_lock.wait_seconds` 時，會在檢查或變更目標前
-拋出 `FileWriteFailed`。
+路徑鎖定預設關閉。將 `collision_lock.enabled` 設為 `true` 後，FileMagic 會先鎖住候選路徑，
+再檢查檔案是否存在，直到檔案寫入、紀錄儲存與必要的還原或清理都完成才釋放鎖。
+等待超過 `collision_lock.wait_seconds` 時，會在操作該路徑前拋出 `FileWriteFailed`。
+儲存、批次刪除與稽核清理如何共用鎖，請參考[設定參考](/zh-TW/guide/configuration)。
 
 
 ## 檔案大小與 MIME type 限制

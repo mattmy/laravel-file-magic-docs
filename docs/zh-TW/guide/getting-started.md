@@ -11,23 +11,12 @@ FileMagic 讓 Laravel 應用程式能用同一套流程接收、儲存、查詢�
 | Laravel | 12 或 13 |
 | PHP extension | `ext-fileinfo` |
 
-以上版本來自套件的 Composer constraints。CI 會在 PHP 8.3、8.4、8.5 分別測試
-Laravel 12 與 13。應用程式還需要至少一個設定完成的 Laravel Filesystem disk，以及
-Laravel 支援的 database。
+CI 會在 PHP 8.3、8.4、8.5 分別測試 Laravel 12 與 13。應用程式還需要設定好
+Laravel Filesystem 磁碟與資料庫連線。
 
-FileMagic 使用 `ext-fileinfo` 取得儲存檔案的類型。Client 回報的檔名與 MIME type
-不能用來證明檔案的實際類型。
-
-透過 `fromUrl()` 匯入遠端 HTTP(S) 檔案時，另外需要 PHP `ext-curl`。缺少時其他功能
-仍可使用，但儲存遠端來源會拋出 `RemoteDownloadUnavailable`。可使用
-`php --ri curl` 確認 CLI 使用的 PHP 是否已啟用此 extension。
-
-圖片縮放功能另外需要：
-
-- `intervention/image` 4.x
-- PHP GD 或 Imagick extension
-
-ZIP 批次下載另外需要 PHP `ext-zip`。
+- 透過 `fromUrl()` 匯入遠端檔案需要 `ext-curl`。
+- 下載 ZIP 需要 `ext-zip`。
+- 圖片縮放需要 Intervention Image 4 和 GD 或 Imagick。
 
 
 ## 安裝
@@ -68,8 +57,8 @@ php artisan vendor:publish --tag=file-magic-config
 
 ## 快速開始
 
-將以下 route 加入 `routes/web.php`。它會先驗證上傳的文件，再使用預設設定儲存，最後
-以 JSON 回傳新紀錄的 ID、UUID 與偵測到的 MIME type。
+以下是 `routes/web.php` 的範例。它會驗證上傳檔案，並回傳 ID、UUID 與偵測到的 MIME 類型。
+開放這條路由前，請先加入應用程式的身分驗證與上傳權限檢查。
 
 ```php
 use Illuminate\Http\Request;
@@ -91,16 +80,12 @@ Route::post('/documents', function (Request $request): array {
 });
 ```
 
-對外開放這個 route 前，請先加入應用程式需要的登入與上傳權限檢查。FileMagic 不會替你
-判斷誰能儲存或存取檔案。
-
-只有來源方法與 `store()` 是必要呼叫。中間可以視單一檔案的需求覆寫 storage、檔名、
-驗證、owner 與圖片選項。
+想調整這次的儲存方式，可以在[呼叫 `store()` 前設定選項](/zh-TW/guide/storing-files)。
 
 ## 下一步
 
 - [儲存上傳、本機、字串與 Base64 檔案](/zh-TW/guide/storing-files)
 - [安全匯入遠端 HTTP(S) 檔案](/zh-TW/guide/remote-files)
 - [查詢、讀取與下載已儲存檔案](/zh-TW/guide/querying-files)
-- [查找所有應用程式 API 與欄位](/zh-TW/guide/reference)
+- [查閱 API 與欄位](/zh-TW/guide/reference)
 

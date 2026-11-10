@@ -5,13 +5,13 @@
 每次 `store()` 都會將原始來源讀取一次，建立有大小上限的本機快照；內容檢查、圖片處理與
 寫入都使用這份資料，避免檢查後來源被替換。即使來源已在本機，也需要這份額外暫存空間。
 
-估算尖峰空間時，請把來源快照、Base64 解碼或遠端下載暫存檔、圖片輸出快照，以及覆寫時
-的舊檔案備份相加，不要只計算其中一項。
+估算暫存空間時，請把可能與來源快照同時存在的檔案算進去，包括 Base64 解碼、遠端下載、
+圖片處理結果及覆寫備份。
 
 - `contents()` 會把完整檔案放入記憶體。大型檔案請使用 `readStream()`，並在使用後
   關閉回傳的 stream。
-- 超限 Base64 會依解碼後大小在解碼前被拒絕；合法 Base64 會以有界線的區塊解碼至暫存 stream，
-  編碼後輸入保留於記憶體，解碼後 bytes 需要暫存磁碟空間。大型輸入請優先使用 upload、path 或 remote source。
+- `fromBase64()` 的編碼字串會留在記憶體，解碼結果則寫入暫存檔。
+  `fromContent()` 和 `fromGeneratedContent()` 接收的完整字串也會占用記憶體。大型檔案請依來源改用上傳、本機路徑或遠端網址。
 - `csv()` 會立即走訪 iterable，並在回傳 `PendingFile` 前把產生的完整輸出放入 PHP 記憶體。
   之後的 `maxSize()` 無法限制產生階段的記憶體；大型匯出請先串流寫入本機檔案，再用 `fromPath()`。
 - 原始來源會先通過 size 與 MIME 規則，但合格圖片的處理記憶體仍可能遠高於壓縮大小；
@@ -35,7 +35,8 @@
 
 ## 安全
 
-- 應用程式必須檢查每次儲存、讀取、URL、下載、ZIP、刪除與稽核清理的權限。
+- 儲存、讀取、產生 URL、下載、刪除及稽核清理前，請由應用程式檢查權限。下載 ZIP 時，
+  要確認使用者可存取壓縮檔內的每個檔案。
 - 上傳檔案前仍須保留 Laravel request validation。
 - 原始檔名、client MIME、metadata、遠端內容與儲存 bytes 都是不可信任資料。
 - 只有應用程式自行產生 bytes 並保證格式時才能使用 `fromGeneratedContent()`。不建議把 upload、
@@ -44,7 +45,6 @@
 - 高敏感度流程請優先使用 MIME allowlist。同源提供檔案時，應考慮封鎖 HTML 與 SVG。
 - 敏感檔案請使用 private disk 與短效 temporary URL。
 - 不要將使用者控制的伺服器路徑傳給 `fromPath()`。
-- 建立 ZIP 前必須驗證每個 target 的操作權限。
 - 除了 FileMagic 的 `max_size`，也要設定 Web Server 與 PHP request limits。
 - 應用程式風險模型需要時，請加入 antivirus 或 content scanning。
 - 遠端匯入預設驗證 TLS 並封鎖 private network targets。正式環境請保留這些預設，

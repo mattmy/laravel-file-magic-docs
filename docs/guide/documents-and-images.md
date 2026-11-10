@@ -2,7 +2,7 @@
 
 ## Generate TXT, JSON, and CSV documents
 
-Create a UTF-8 TXT document:
+### Create a UTF-8 TXT document:
 
 ```php
 $file = FileMagic::text("First line\nSecond line")
@@ -14,7 +14,7 @@ $file = FileMagic::text("First line\nSecond line")
 
 `text()` preserves the input exactly, including whitespace and line endings. An empty string creates an empty `.txt` file.
 
-Create a readable JSON document from an array or `JsonSerializable` object:
+### Create a JSON document:
 
 ```php
 $file = FileMagic::json([
@@ -27,7 +27,7 @@ $file = FileMagic::json([
 
 JSON uses pretty printing, preserves Unicode and unescaped slashes, and ends with a newline.
 
-Create a CSV document:
+### Create a CSV document:
 
 ```php
 $file = FileMagic::csv([
@@ -45,9 +45,8 @@ memory before returning a `PendingFile`. There is no separate CSV output limit, 
 `maxSize()` cannot limit memory used while generating the CSV. For large exports, have your
 application stream the CSV to a local file, then store it with `fromPath()`.
 
-All three methods return `PendingFile`, so disk, directory, filename, visibility, collision,
-owner, metadata, MIME, and size options remain available. Call `store()` to save the document;
-the result is a normal `StoredFile` that works with every `FileQuery` operation.
+All three methods return a `PendingFile`. You can set the same storage options as for an upload
+before calling `store()`.
 
 Invalid UTF-8, JSON values that cannot be encoded, and inconsistent CSV rows throw `InvalidDocumentData`.
 
@@ -58,7 +57,7 @@ Invalid UTF-8, JSON values that cannot be encoded, and inconsistent CSV rows thr
 composer require "intervention/image:^4.0"
 ```
 
-With GD or Imagick enabled:
+Enable GD or Imagick, then set the maximum width and quality.
 
 ```php
 $file = FileMagic::fromUpload($image)
@@ -66,13 +65,7 @@ $file = FileMagic::fromUpload($image)
     ->store();
 ```
 
-Call `resizeImage()` without arguments to use `image.max_width` and `image.quality` from the configuration:
-
-```php
-$file = FileMagic::fromUpload($image)
-    ->resizeImage()
-    ->store();
-```
+Call `resizeImage()` without arguments to use the configured `image.max_width` and `image.quality`.
 
 JPEG, PNG, WebP, and BMP are processed when supported by the active driver. Resizing preserves
 aspect ratio and never enlarges an image. Imagick is preferred when both Imagick and GD are available.

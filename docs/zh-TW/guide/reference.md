@@ -1,7 +1,6 @@
 # API 參考
 
-這裡列出 Laravel 應用程式會使用的方法與欄位。需要完整範例與行為時，可前往各段落
-提供的說明頁面。下方程式區塊是方法簽章索引，不是可以直接執行的 PHP 程式。
+程式碼區塊列出方法簽章。使用範例請參考各節連結的說明頁面。
 
 ## 建立待儲存檔案
 
@@ -21,11 +20,10 @@ FileMagic::csv(iterable $rows): PendingFile
 - `fromPath()`：接受應用程式選擇的可讀本機路徑。
 - `fromContent()`：接受文字或二進位內容。`$originalFilename` 與 `$mimeType` 是選用的
   來源資訊，儲存類型仍以內容為準。
-- `fromGeneratedContent()`：接受應用程式產生的 bytes。非 `null` MIME type 具有 Symfony
-  extension mapping 時，會直接用於 MIME 政策與副檔名；MIME 為 `null` 或無 mapping 時委派給
-  `fromContent()`，非 `null` 的值仍只作不可信任提示。原始檔名不會決定 MIME 或儲存名稱；
-  這也不是內容安全認證。完整 `$contents` 已位於 PHP 記憶體，請勿將不可信任來源
-  連同可識別 MIME 傳入此入口。
+- `fromGeneratedContent()`：接受應用程式自行產生且能保證格式的內容。Symfony 找得到對應的
+  副檔名時，FileMagic 會採用傳入的 MIME 類型來套用規則及決定副檔名。沒有對應或未提供 MIME 時，
+  改由 `fromContent()` 偵測內容。原始檔名用於顯示及下載，儲存檔名可用 `named()` 設定。
+  請勿對不可信任的內容使用可信任 MIME。完整 `$contents` 字串會占用 PHP 記憶體。
 - `fromBase64()`：接受 Base64 文字或 Base64 Data URI。
 - `fromUrl()`：建立 HTTP(S) 來源，在 `store()` 時才下載；`$options` 可調整這次下載的規則。
 - `text()`、`json()`、`csv()`：產生可以像一般檔案一樣儲存的內容。
@@ -101,8 +99,9 @@ $query->delete(): int
 - `downloadZip()`：將全部符合檔案回傳為 ZIP 下載；`$name` 設定 ZIP 檔名。
 - `delete()`：刪除符合的實體檔案與紀錄，回傳完成刪除的數量。
 
-沒有紀錄時，`one()` 回傳 `null`，`get()` 與 `urls()` 回傳空 Collection，`delete()` 回傳 `0`。
-`downloadZip()` 與所有需要第一筆結果的方法（包括 `exists()`）會拋出 `FileNotFound`。
+沒有紀錄時，`one()` 回傳 `null`，`get()` 和 `urls()` 回傳空 Collection，`delete()` 回傳 `0`。
+`exists()` 等單檔操作會拋出 `FileNotFound`。`downloadZip()` 也至少需要一筆紀錄，
+並會先檢查 `ext-zip` 是否可用。
 
 ## StoredFile 欄位
 

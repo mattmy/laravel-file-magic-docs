@@ -21,16 +21,14 @@ return FileMagic::find($targets)->downloadZip('project-documents');
 ```
 
 Both `project-documents` and `project-documents.zip` produce `project-documents.zip`.
-Archive entries use each file's original name. Duplicate names become `report (2).pdf`,
-`report (3).pdf`, and so on, while preserving query order.
+ZIP entries use the original filename when available. FileMagic strips directory components,
+cleans unsafe characters, and falls back to the stored name when needed. It keeps query order
+and adds suffixes such as `report (2).pdf` and `report (3).pdf` for duplicate names.
 
 ZIP creation uses local temporary space instead of loading every source into memory.
 `zip.max_files` and `zip.max_size` limit each operation; `zip.max_size` measures the
-uncompressed source bytes. Temporary files are removed after the response finishes.
-
-An empty result or any missing physical file fails the complete operation. FileMagic does
-not silently return a partial archive. `downloadZip()` creates only a temporary HTTP
-download and does not create another `StoredFile` record.
+uncompressed source bytes. An empty result or any missing or unreadable file fails the download.
+The archive is deleted after the response is sent. It has no `StoredFile` record.
 
 
 ## Delete
@@ -47,18 +45,16 @@ Batch deletion:
 $deleted = FileMagic::find($targets)->delete();
 ```
 
-Batch deletion removes records only for physical files confirmed as deleted or already
-missing. Records for files that still exist or cannot be checked remain available for retry.
+FileMagic groups storage deletions by disk and checks individual paths only if a disk's batch
+fails. It removes records for files confirmed deleted or missing and keeps the rest for retry.
 
-FileMagic reloads records before deletion to avoid stale paths. Missing records are skipped;
-a changed disk, path, or location identity preserves the record and produces `PartialFileDeletion`.
-With collision locking enabled, it also acquires every candidate path lock in a stable order
-and holds them through the operation.
+FileMagic reloads records before deletion. It skips records that are already gone and keeps those
+whose disk, path, or location identifier changed. With path locking enabled, FileMagic takes the
+locks before reloading and holds them until the operation finishes.
 
-If only part of the operation completes, FileMagic first persists the confirmed state and
-then throws `PartialFileDeletion`. Use `deletedCount()`, `failedCount()`, and `failedKeys()`
-to report the result. You may safely retry the original `FileMagic::find($targets)->delete()`;
-already missing objects are treated as deleted.
+If any targets remain unresolved, FileMagic deletes the confirmed records and throws
+`PartialFileDeletion`. Check `deletedCount()`, `failedCount()`, and `failedKeys()`. Before retrying
+with a fresh `find()`, verify that the failed records still point to files you intend to delete.
 
 A batch is not all-or-nothing because storage and the database cannot share one transaction.
 Earlier files may already be deleted when a later file fails. Batch deletion does not create

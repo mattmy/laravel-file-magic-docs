@@ -2,7 +2,7 @@
 
 ## 產生 TXT、JSON 與 CSV 文件
 
-產生 UTF-8 TXT 文件：
+### 產生 UTF-8 TXT 文件：
 
 ```php
 $file = FileMagic::text("第一行\n第二行")
@@ -14,7 +14,7 @@ $file = FileMagic::text("第一行\n第二行")
 
 `text()` 會完整保留輸入內容，包括空白與換行。空字串會產生空的 `.txt` 檔案。
 
-從 array 或 `JsonSerializable` 物件產生容易閱讀的 JSON：
+### 產生 JSON：
 
 ```php
 $file = FileMagic::json([
@@ -25,9 +25,9 @@ $file = FileMagic::json([
     ->store();
 ```
 
-JSON 使用 pretty print、保留 Unicode 與未跳脫的 slash，並在文件結尾加入換行。
+輸出會加上縮排及結尾換行，保留原有的 Unicode 字元與斜線。
 
-產生 CSV 文件：
+### 產生 CSV 文件：
 
 ```php
 $file = FileMagic::csv([
@@ -38,28 +38,28 @@ $file = FileMagic::csv([
     ->store();
 ```
 
-Associative rows 會使用第一列的 key 自動產生 header；list rows 不會產生 header。每列必須使用相同的 key 與順序，每個值必須是 scalar 或 `null`。CSV 固定使用不含 BOM 的 UTF-8、逗號 delimiter、雙引號 enclosure 與 CRLF 行尾。
+使用關聯式陣列時，第一列的鍵會成為欄名。使用清單時，CSV 會直接從資料列開始。
+各列的鍵與順序都必須一致，每個值必須是純量或 `null`。CSV 使用不含 BOM 的 UTF-8，
+以逗號分隔、雙引號包住需要引號的欄位，並以 CRLF 換行。
 
 `csv()` 會立即走訪 iterable，並在回傳 `PendingFile` 前把產生的完整輸出放入 PHP 記憶體。
 CSV 沒有獨立的輸出上限，之後設定 `maxSize()` 也無法限制產生 CSV 時的記憶體用量。
 大型匯出請先由應用程式串流寫入本機檔案，再用 `fromPath()` 儲存。
 
-三個方法都會回傳 `PendingFile`，因此仍可使用 disk、directory、filename、visibility、
-collision、owner、metadata、MIME 與 size 設定。呼叫 `store()` 後會取得一般的
-`StoredFile`，也能使用所有 `FileQuery` 操作。
+三個方法都會回傳 `PendingFile`，可像上傳檔案一樣，在呼叫 `store()` 前調整儲存選項。
 
-無效 UTF-8、無法編碼的 JSON 值，以及結構不一致的 CSV rows 會拋出 `InvalidDocumentData`。
+無效的 UTF-8、無法編碼的 JSON 值及欄位不一致的 CSV 資料列，都會拋出 `InvalidDocumentData`。
 
 
 ## 圖片縮放
 
-先安裝 optional dependency：
+先安裝 Intervention Image 4。
 
 ```bash
 composer require "intervention/image:^4.0"
 ```
 
-確認 GD 或 Imagick 已啟用後，即可按比例縮放：
+啟用 GD 或 Imagick 後，即可指定最大寬度和輸出品質。
 
 ```php
 $file = FileMagic::fromUpload($image)
@@ -67,13 +67,7 @@ $file = FileMagic::fromUpload($image)
     ->store();
 ```
 
-使用設定檔的預設尺寸及品質：
-
-```php
-$file = FileMagic::fromUpload($image)
-    ->resizeImage()
-    ->store();
-```
+直接呼叫 `resizeImage()` 會使用設定的 `image.max_width` 和 `image.quality`。
 
 支援 JPEG、PNG、WebP 與 BMP，實際可處理的格式取決於 driver。縮放會維持比例、只縮小不放大；
 同時安裝 Imagick 與 GD 時會優先使用 Imagick。

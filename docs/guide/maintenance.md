@@ -1,20 +1,7 @@
 # Consistency audits
 
-FileMagic can compare stored-file database records with their Laravel
-Filesystem objects:
-
-```bash
-php artisan file-magic:audit
-```
-
-The command checks only from the database toward storage:
-
-- a successful `exists()` result is healthy;
-- `false` means the object is missing;
-- an exception means the state is unknown, so the record is preserved.
-
-It does not list storage, find objects without database records, delete
-physical objects, or recreate missing objects.
+`file-magic:audit` checks whether each selected database record still has a file in storage.
+It starts from the database, so files without a record are outside the audit's scope.
 
 ## Read-only audit
 
@@ -87,9 +74,8 @@ Lock-enabled cleanup closes the FileMagic store/delete race by revalidating unde
 path lock, but direct model deletion, external storage writers, different cache backends, and
 operations that exceed the lease remain outside that guarantee.
 
-Storage, network, adapter, and permission exceptions are reported as unknown
-failures rather than missing objects. They produce exit code `2` and preserve
-the affected records.
+An existence check that throws is reported as `failed`, with exit code `2`. Cleanup keeps the
+affected record.
 
 Cleanup is not all-or-nothing. If a database error occurs, the command stops with exit code
 `2`, but records handled earlier may already be deleted. The command never deletes storage

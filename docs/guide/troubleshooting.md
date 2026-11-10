@@ -2,8 +2,8 @@
 
 ## MIME type differs from the browser value
 
-FileMagic uses the file contents to choose the stored MIME type. Browser-provided MIME values
-are only source information and may be different.
+For uploads, FileMagic detects the MIME type from the file contents. The value reported by the
+browser can differ from the stored `mime_type`.
 
 ## A file gets a `.bin` extension
 
@@ -17,8 +17,8 @@ temporary URLs.
 
 ## Image processing is unavailable
 
-Install Intervention Image 4 and enable GD or Imagick. Image resizing supports JPEG, PNG,
-WebP, and BMP.
+Install Intervention Image 4 and enable GD or Imagick in the PHP runtime that runs `store()`.
+See [Image resizing](/guide/documents-and-images#image-resizing) for installation and supported formats.
 
 ## A physical file was removed outside FileMagic
 

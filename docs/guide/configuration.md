@@ -1,8 +1,6 @@
 # Configuration
 
-FileMagic works with its defaults after you publish and run the migration. Publish the
-configuration file only when your application needs different storage, validation, URL, image,
-ZIP, or remote-download defaults:
+To change the defaults, publish `config/file-magic.php`.
 
 ```bash
 php artisan vendor:publish --tag=file-magic-config
@@ -42,14 +40,9 @@ The blocklist takes priority over the allowlist. Omitting `blocked_mime_types` k
 blocklist; setting it to `[]` explicitly disables it. `allowMimeTypes()` and `blockMimeTypes()`
 replace their corresponding global lists rather than merging with them.
 
-Configuration values are strictly typed and are validated when the corresponding feature is
-used. FileMagic does not cast string integers, discard invalid list members, or fall back from
-an invalid value. Invalid values throw `InvalidConfiguration` and identify the affected key.
-Unused optional image, ZIP, remote, and temporary-URL settings do not block other operations.
-
-Before upgrading, make sure numeric settings are PHP integers rather than numeric strings,
-list settings use consecutive integer keys and valid member types, enum-backed settings match
-the documented values exactly, and every configured disk exists in `filesystems.disks`.
+FileMagic validates settings when the feature uses them. Use PHP integers for numeric settings,
+lists with consecutive keys starting at zero, and the exact enum values shown in the table. Disk names
+must exist in `filesystems.disks`. Invalid settings throw `InvalidConfiguration` with the setting name.
 
 Changing `table` after the published migration has run does not rename existing data. Create a
 new migration for an already deployed application. See [Models and exceptions](/guide/models-and-exceptions)
@@ -57,9 +50,8 @@ when replacing `model` or `table`.
 
 ## Optional collision-lock deployment
 
-Collision locking is disabled by default, so normal FileMagic mutations do not require a
-lock-capable cache store. Disabled mode retains the existing behavior and does not protect
-concurrent stores and deletions from TOCTOU races. Set `collision_lock.enabled` to `true` to opt in.
+To coordinate writes and deletes on the same path, set `collision_lock.enabled` to `true`.
+Locking is off by default.
 
 When enabled, stores, batch deletion, and audit cleanup use the same canonical disk/path lock.
 Batch operations acquire distinct keys in a stable order and revalidate current database identity

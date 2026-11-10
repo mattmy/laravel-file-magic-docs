@@ -32,15 +32,10 @@ the database deletion fails. Use `FileMagic::find(...)->delete()` for coordinate
 Configure a custom table before publishing the migration. If already deployed, create a new
 migration rather than editing migration history.
 
-## 0.x upgrade note
-
-If your application calls `StoredFile::temporaryUrl()` directly, pass a `DateTimeInterface`
-expiration now. `FileMagic::find($target)->temporaryUrl()` keeps the configured default
-lifetime. A custom model must now declare the same `$table` as `file-magic.table`.
-
 ## Exceptions
 
-All exceptions extend `FileMagicException`.
+All FileMagic exceptions extend `Mattmy\FileMagic\Exceptions\FileMagicException`.
+Some read, URL, and storage operations can also throw exceptions from the storage adapter.
 
 | Exception | Meaning |
 | --- | --- |
@@ -83,9 +78,3 @@ try {
     return back()->withErrors(['file' => 'The file could not be stored.']);
 }
 ```
-
-The package does not choose HTTP status codes or response formats. This table lists FileMagic
-domain exceptions. Some read, URL, and storage operations can still throw underlying adapter
-exceptions; catching `FileMagicException` does not catch every runtime failure.
-
-

@@ -6,14 +6,14 @@ Each `store()` attempt reads the original source once into a bounded local snaps
 image processing, and writing use those captured bytes, avoiding source changes after inspection.
 Even a local source needs this extra temporary space.
 
-Budget for resources that can coexist: the source snapshot, Base64 decoding or remote-download
-file, processed-image snapshot, and old-object backup for an overwrite. These costs add up.
+Allow room for files that can coexist with the source snapshot, including decoded Base64,
+remote downloads, processed images, and overwrite backups.
 
 - `contents()` loads the complete file into memory. Use `readStream()` for large files and
   close the returned stream after use.
-- Oversized Base64 is rejected from decoded size before decoding. Valid Base64 is decoded in
-  bounded chunks into a temporary stream, so the encoded input remains in memory while decoded
-  bytes require temporary disk space. Prefer uploads, paths, or remote sources for large inputs.
+- `fromBase64()` keeps the encoded string in memory and decodes to a temporary file.
+  `fromContent()` and `fromGeneratedContent()` receive the complete string in memory. For large
+  files, use an upload, a local path, or a remote URL as appropriate.
 - `csv()` consumes its iterable immediately and fully materializes the generated output in PHP
   memory before returning `PendingFile`. A later `maxSize()` does not limit generation memory.
   For large exports, stream to a local file in application code, then use `fromPath()`.
@@ -43,7 +43,8 @@ largest files and batches your application accepts.
 
 ## Security
 
-- Authorize every store, read, URL, download, ZIP, delete, and audit-cleanup operation in your application.
+- Authorize each store, read, URL, download, delete, and audit cleanup in your application.
+  For ZIP downloads, check access to every file in the archive.
 - Keep Laravel request validation in front of uploaded files.
 - Treat original names, client MIME values, metadata, remote content, and stored bytes as
   untrusted data.
@@ -55,7 +56,6 @@ largest files and batches your application accepts.
   are served from the same origin.
 - Keep sensitive files on private disks and use short-lived temporary URLs.
 - Never pass a user-controlled server path to `fromPath()`.
-- Validate every target before creating a ZIP download.
 - Configure web-server and PHP request limits in addition to FileMagic's `max_size`.
 - Add antivirus or content scanning when required by the application's threat model.
 - Remote imports verify TLS and block private network targets by default. Keep these defaults,

@@ -6,8 +6,8 @@
 `RemoteDownloadUnavailable`；上傳、本機來源、產生文件及既有檔案操作仍可使用。
 可以執行 `php --ri curl` 確認 CLI 環境。
 
-`fromUrl()` 接受絕對 HTTP 或 HTTPS 檔案網址，並回傳一般的 `PendingFile`。下載會在 `store()` 才開始。預設只接受
-HTTPS，而且會驗證 TLS certificate：
+`fromUrl()` 接受絕對網址，回傳 `PendingFile`。呼叫 `store()` 才會開始下載。
+FileMagic 預設要求使用 HTTPS，並驗證憑證。
 
 ```php
 use Mattmy\FileMagic\Facades\FileMagic;
@@ -23,17 +23,9 @@ $file = FileMagic::fromUrl(
     ->store();
 ```
 
-支援的常見網址例如：
+請使用 HTTPS，或針對單次下載明確允許 HTTP。內嵌帳號密碼或含有片段（`#fragment`）的網址會被拒絕。
 
-```text
-https://cdn.example.com/images/avatar.jpg
-https://downloads.example.com/documents/manual.pdf
-https://media.example.com/videos/introduction.mp4
-https://files.example.com/archive.zip
-```
-
-只支援 HTTP(S)。`file:`、`ftp:`、`gopher:`、`data:`、包含帳號密碼或 fragment 的
-網址、不允許的 port，以及解析到受保護網路的網址都會被拒絕。
+連線至 IPv6 伺服器時，請使用網域名稱。若網址直接以方括號內的 IPv6 位址作為主機，會拋出 `InvalidRemoteUrl`。
 
 ### RemoteFileOptions
 
@@ -43,15 +35,7 @@ https://files.example.com/archive.zip
 use Mattmy\FileMagic\Data\RemoteFileOptions;
 
 $options = new RemoteFileOptions(
-    verifyTls: true,
-    allowHttp: false,
-    allowHtml: false,
-    connectTimeoutSeconds: 5,
-    timeoutSeconds: 30,
-    maxRedirects: 3,
     allowedHosts: ['downloads.example.com'],
-    allowedPorts: [80, 443],
-    allowedPrivateHosts: [],
 );
 
 $file = FileMagic::fromUrl(
@@ -60,10 +44,10 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-傳入 `RemoteFileOptions` 時，該物件會取代這次操作的 `remote` 全域預設值，不會與
-設定檔合併。請在物件中完整列出該請求需要的非預設 host、port 與 timeout。
+傳入 `RemoteFileOptions` 時，省略的參數會使用下表的預設值。如果需要沿用應用程式的
+`remote` 設定，請明確傳入對應的值。
 
-| Option | 型別 | 預設值 | 行為 |
+| 選項 | 型別 | 預設值 | 行為 |
 | --- | --- | --- | --- |
 | `verifyTls` | `bool` | `true` | 驗證 HTTPS certificate、hostname 與 certificate chain |
 | `allowHttp` | `bool` | `false` | 明確允許未加密 HTTP |
@@ -123,11 +107,10 @@ $options = new RemoteFileOptions(
 );
 ```
 
-### 官網與 HTML 回應
+### 網頁與 HTML 回應 {#官網與-html-回應}
 
-一般官網通常回傳 `text/html`，而不是可下載文件。FileMagic 預設會拒絕偵測為
-`text/html` 或 `application/xhtml+xml` 的內容並拋出 `DisallowedMimeType`，不會把
-網頁原始碼偽裝成 `.txt`。
+FileMagic 偵測到遠端回應是 `text/html` 或 `application/xhtml+xml` 時，預設會拋出
+`DisallowedMimeType`。
 
 確實需要保存 HTML 時：
 
@@ -150,9 +133,9 @@ script；除非應用程式會隔離並清理內容，否則應保持 private �
 
 ### 網址下載的安全性與效能
 
-FileMagic 會封鎖 local、private、reserved 與 cloud metadata destinations，redirect
-後也會重新檢查。`allowedPrivateHosts` 可以允許指定的已知內部服務，但不會一次允許
-所有 private network destinations。
+FileMagic 會檢查起始網址和每次重新導向的通訊協定、主機名稱、連接埠及 DNS 解析出的 IP，
+並固定連線至通過檢查的 IP。預設會封鎖本機、私有、保留及雲端中繼資料位址。
+要允許特定內部主機，請使用 `allowedPrivateHosts`。
 
 遠端 response headers 與 URL filename 都是不可信任提示；MIME 與 extension 由下載
 內容判斷。`Content-Length` 可提前拒絕過大回應，但實際串流 bytes 仍一定受到

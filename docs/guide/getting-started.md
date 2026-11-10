@@ -11,20 +11,12 @@ and deleting files. Store an upload to a Filesystem disk and receive a searchabl
 | Laravel | 12 or 13 |
 | PHP extension | `ext-fileinfo` |
 
-These versions come from the package's Composer constraints. CI tests every Laravel 12 and 13
-combination on PHP 8.3, 8.4, and 8.5. You also need a configured Laravel Filesystem disk and a
-database supported by Laravel.
+CI tests Laravel 12 and 13 on PHP 8.3, 8.4, and 8.5. Your app also needs a configured
+Laravel Filesystem disk and database connection.
 
-FileMagic uses `ext-fileinfo` to determine the stored file type. The filename and MIME type
-reported by the client are not used as proof of the file's type.
-
-Remote HTTP(S) imports through `fromUrl()` additionally need PHP `ext-curl`.
-Without it, all other features remain available, while storing a remote source
-throws `RemoteDownloadUnavailable`. Verify the extension used by your CLI with
-`php --ri curl`.
-
-Image resizing additionally needs `intervention/image` 4.x and PHP GD
-or Imagick. ZIP downloads additionally need PHP `ext-zip`.
+- Remote imports through `fromUrl()` require `ext-curl`.
+- ZIP downloads require `ext-zip`.
+- Image resizing requires Intervention Image 4 and GD or Imagick.
 
 
 ## Installation
@@ -58,8 +50,8 @@ See [Configuration](/guide/configuration) for every option and environment overr
 
 ## Quick start
 
-Add this route to `routes/web.php`. It validates an uploaded document, stores it with the default
-settings, and returns the new record's ID, UUID, and detected MIME type as JSON.
+This example for `routes/web.php` validates an upload and returns its ID, UUID, and detected MIME
+type. Add your application's authentication and upload authorization before exposing the route.
 
 ```php
 use Illuminate\Http\Request;
@@ -81,11 +73,7 @@ Route::post('/documents', function (Request $request): array {
 });
 ```
 
-Add your application's authentication and upload authorization before exposing this route.
-FileMagic does not decide who may store or access a file.
-
-The source method and `store()` are the only required calls. Methods between them can override
-storage, naming, validation, ownership, and image options for that file.
+To change how this upload is stored, [set options before calling `store()`](/guide/storing-files#customize-storage).
 
 ## Next steps
 

@@ -2,7 +2,7 @@
 
 ## 選擇要操作的檔案
 
-一般檔案查詢全部透過唯一的 `find()` 入口。它可以接受正整數 ID、UUID 或已存在的 `StoredFile` Model：
+將正整數 ID、UUID 或已儲存的 `StoredFile` Model 傳給 `find()`。
 
 ```php
 $file = FileMagic::find($id)->one();
@@ -18,7 +18,7 @@ FileMagic::find($fileModel)->download();
 FileMagic::find($id)->delete();
 ```
 
-批次查詢支援 variadic targets、array 及 Laravel Collection：
+批次查詢可逐一傳入目標，也可傳入陣列或 Laravel Collection。
 
 ```php
 $variadic = FileMagic::find(
@@ -40,14 +40,12 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-三種形式都會保留輸入順序並移除重複紀錄。`find()` 本身不查詢資料庫，而是在第一次
-取得結果或執行操作時，才用一筆查詢取得目前的紀錄，並套用設定 Model 的全域 scope。
-傳入的 Model 只用來識別紀錄，不會沿用它的其他屬性或已載入關聯。
+三種形式都會保留輸入順序並去除重複紀錄。第一次操作 `FileQuery` 時，會用一筆查詢取得目前的紀錄，
+並套用設定 Model 的全域 scope。傳入的 Model 只提供主鍵。同一個 `FileQuery` 的後續操作會沿用查詢結果。
+空陣列或空 Collection 不會查詢資料庫。
 
-同一個 `FileQuery` 會快取查詢結果，後續操作不會重查。空 array 或 Collection 不查詢，
-並回傳空的 `Illuminate\Support\Collection`。
-
-Array 與 Collection 必須是一維結構，每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。無效元素會拋出 `InvalidFileTarget`，不會被靜默移除。
+陣列與 Collection 必須是一維結構，且每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。
+有無效元素時會拋出 `InvalidFileTarget`。
 
 UUID 不區分大小寫。`"123"` 這類數字字串不算整數 ID，請先驗證並轉換 request 的值。
 Model 必須符合設定的檔案 Model、連線、資料表與主鍵名稱，且主鍵不可有未儲存的修改。

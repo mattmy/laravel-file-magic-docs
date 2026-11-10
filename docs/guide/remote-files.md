@@ -6,9 +6,8 @@ This optional feature requires PHP `ext-curl`. Without it, `store()` for a remot
 `RemoteDownloadUnavailable`; uploads, local sources, generated documents, and existing-file
 operations remain available. Verify your CLI environment with `php --ri curl`.
 
-`fromUrl()` accepts absolute HTTP or HTTPS file URLs and returns the normal
-`PendingFile`. The download starts only at `store()`. HTTPS is the default and TLS certificate
-verification is enabled:
+`fromUrl()` takes an absolute URL and returns a `PendingFile`. The download starts at `store()`.
+By default, FileMagic requires HTTPS and verifies the certificate.
 
 ```php
 use Mattmy\FileMagic\Facades\FileMagic;
@@ -24,18 +23,11 @@ $file = FileMagic::fromUrl(
     ->store();
 ```
 
-Typical supported URLs include:
+Use HTTPS, or explicitly allow HTTP for one download. URLs with embedded credentials or fragments
+are rejected.
 
-```text
-https://cdn.example.com/images/avatar.jpg
-https://downloads.example.com/documents/manual.pdf
-https://media.example.com/videos/introduction.mp4
-https://files.example.com/archive.zip
-```
-
-Only HTTP(S) is supported. `file:`, `ftp:`, `gopher:`, `data:`, URLs containing
-credentials or fragments, disallowed ports, and URLs that resolve to protected
-networks are rejected.
+Use a hostname to reach an IPv6 server. A URL with a bracketed IPv6 address as its host throws
+`InvalidRemoteUrl`.
 
 ### RemoteFileOptions
 
@@ -45,15 +37,7 @@ Pass `RemoteFileOptions` when one download needs different rules:
 use Mattmy\FileMagic\Data\RemoteFileOptions;
 
 $options = new RemoteFileOptions(
-    verifyTls: true,
-    allowHttp: false,
-    allowHtml: false,
-    connectTimeoutSeconds: 5,
-    timeoutSeconds: 30,
-    maxRedirects: 3,
     allowedHosts: ['downloads.example.com'],
-    allowedPorts: [80, 443],
-    allowedPrivateHosts: [],
 );
 
 $file = FileMagic::fromUrl(
@@ -62,9 +46,8 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-Passing `RemoteFileOptions` replaces the configured `remote` defaults for that
-operation; the values are not merged. Include every non-default host, port, and
-timeout required by the request.
+When you pass `RemoteFileOptions`, omitted arguments use the constructor defaults below.
+Pass any values you need from your app's `remote` configuration explicitly.
 
 | Option | Type | Default | Behavior |
 | --- | --- | --- | --- |
@@ -132,9 +115,8 @@ $options = new RemoteFileOptions(
 
 ### Website and HTML responses
 
-A normal website usually returns `text/html` rather than a downloadable document.
-FileMagic rejects detected `text/html` and `application/xhtml+xml` by default with
-`DisallowedMimeType`. It does not disguise website source as a `.txt` file.
+By default, FileMagic throws `DisallowedMimeType` when it detects `text/html` or
+`application/xhtml+xml` in a remote response.
 
 If storing HTML is intentional:
 
@@ -158,9 +140,9 @@ download it as an attachment unless the application sanitizes and isolates it.
 
 ### URL download security and performance
 
-FileMagic blocks local, private, reserved, and cloud metadata destinations, including after
-redirects. `allowedPrivateHosts` can allow specific known internal services; it does not
-allow every private-network destination.
+For the initial URL and each redirect, FileMagic checks the scheme, hostname, port, and resolved
+IP addresses, then pins the connection to a validated IP. Local, private, reserved, and cloud
+metadata addresses are blocked by default. Use `allowedPrivateHosts` to allow a specific internal host.
 
 Remote response headers and URL filenames are untrusted hints. MIME and extension
 come from the downloaded bytes. `Content-Length` may reject an oversized response

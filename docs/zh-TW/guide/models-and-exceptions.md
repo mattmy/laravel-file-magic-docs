@@ -46,13 +46,10 @@ final class StoredFile extends BaseStoredFile
 
 如果 migration 已經部署到正式環境，應建立新的 migration 重新命名資料表，不要修改已經部署的 migration。
 
-## 0.x 升級說明
-
-應用程式如果直接呼叫 `StoredFile::temporaryUrl()`，現在必須傳入 `DateTimeInterface` 到期時間。`FileMagic::find($target)->temporaryUrl()` 仍會使用設定的預設有效期。自訂 Model 現在必須宣告與 `file-magic.table` 相同的 `$table`。
-
 ## 例外
 
 所有套件例外都繼承 `Mattmy\FileMagic\Exceptions\FileMagicException`。
+部分讀取、URL 與儲存操作也可能拋出儲存驅動程式的例外。
 
 | 例外 | 原因 |
 | --- | --- |
@@ -97,9 +94,3 @@ try {
     ]);
 }
 ```
-
-套件不會自行決定 HTTP 狀態碼或回應格式。這裡列的是 FileMagic 領域例外；
-部分讀取、URL 與 storage 操作仍可能拋出底層 adapter 的例外，
-`catch (FileMagicException)` 不代表能攔下所有執行錯誤。
-
-

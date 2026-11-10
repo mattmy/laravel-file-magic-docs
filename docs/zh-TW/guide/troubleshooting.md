@@ -2,8 +2,7 @@
 
 ## MIME type 與瀏覽器提供的值不同
 
-FileMagic 會依檔案內容選擇儲存的 MIME type。瀏覽器提供的值只是來源資訊，因此可能
-與最後結果不同。
+FileMagic 會依上傳檔案的內容偵測 MIME 類型，因此瀏覽器回報的值可能與紀錄的 `mime_type` 不同。
 
 ## 檔案使用 `.bin` 副檔名
 
@@ -17,8 +16,8 @@ driver。
 
 ## 圖片處理無法使用
 
-安裝 Intervention Image 4，並啟用 GD 或 Imagick。圖片縮放支援 JPEG、PNG、WebP
-與 BMP。
+請安裝 Intervention Image 4，並在執行 `store()` 的 PHP 環境啟用 GD 或 Imagick。
+安裝方式與支援格式請參考[文件與圖片](/zh-TW/guide/documents-and-images)。
 
 ## 實體檔案被 FileMagic 以外的系統移除
 
