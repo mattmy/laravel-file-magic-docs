@@ -40,10 +40,9 @@ $file = FileMagic::csv([
 
 Associative rows use the first row's keys as a header. List rows do not generate a header. Every row must use the same keys in the same order, and every value must be scalar or `null`. CSV uses UTF-8 without a BOM, comma delimiters, double-quote enclosures, and CRLF line endings.
 
-`csv()` consumes the iterable immediately and fully materializes the generated output in PHP
-memory before returning a `PendingFile`. There is no separate CSV output limit, and a later
-`maxSize()` cannot limit memory used while generating the CSV. For large exports, have your
-application stream the CSV to a local file, then store it with `fromPath()`.
+`csv()` reads all rows and holds the finished CSV in PHP memory before returning a `PendingFile`.
+There is no separate CSV output limit. `maxSize()` applies later, when you call `store()`.
+For large exports, stream the CSV to a local file, then store it with `fromPath()`.
 
 All three methods return a `PendingFile`. You can set the same storage options as for an upload
 before calling `store()`.

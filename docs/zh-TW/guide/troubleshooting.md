@@ -1,6 +1,6 @@
 # 常見問題
 
-## MIME type 與瀏覽器提供的值不同
+## MIME 類型與瀏覽器提供的值不同 {#mime-type-與瀏覽器提供的值不同}
 
 FileMagic 會依上傳檔案的內容偵測 MIME 類型，因此瀏覽器回報的值可能與紀錄的 `mime_type` 不同。
 
@@ -37,6 +37,4 @@ driver。
 
 ## 開發環境的 HTTPS certificate 驗證失敗
 
-可以時應先修正 certificate。只有受控環境才能使用
-`RemoteFileOptions::withoutTlsVerification()`；它不會開啟 HTTP、private hosts 或
-不支援的 ports。
+請先修正憑證。若是受控的開發環境，可參考[遠端檔案的 TLS 驗證說明](/zh-TW/guide/remote-files#tls-驗證)。

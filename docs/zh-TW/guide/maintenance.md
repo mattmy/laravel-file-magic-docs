@@ -21,11 +21,10 @@ php artisan file-magic:audit --chunk=250
 | `--force` | Boolean flag，預設 `false` | 在清理模式略過確認；單獨使用會以 exit code `2` 結束 |
 
 無效選項會在掃描或修改資料前以 exit code `2` 結束。指令會使用 FileMagic 設定的
-Model、連線、資料表與主鍵。即使 Model 有全域 scope，仍會檢查全部紀錄；
-需要縮小範圍時請使用 `--disk`。
+Model、連線、資料表與主鍵。稽核會略過全域範圍及預設的關聯預先載入。要縮小範圍時，請用 `--disk`。
 
-每筆遺失結果只顯示資料庫主鍵、disk 與 storage 相對路徑。最後摘要會
-列出 `checked`、`healthy`、`missing`、`deleted` 及 `failed`。
+每筆遺失結果會顯示資料庫主鍵、磁碟及相對路徑。摘要會列出 `checked`、`healthy`、
+`missing`、`deleted` 和 `failed`。
 
 ## 清理遺失檔案的紀錄
 
@@ -41,9 +40,6 @@ php artisan file-magic:audit --delete-missing-records
 ```bash
 php artisan file-magic:audit --delete-missing-records --force --no-interaction
 ```
-
-`--force` 沒有搭配 `--delete-missing-records` 時屬於無效輸入。Storage 檢查拋出
-例外時仍代表狀態不明，不會刪除該紀錄。
 
 清理會先重新查詢初步判定遺失的紀錄，再檢查一次實體檔案。啟用路徑鎖定時，
 這兩步會在鎖內進行。只有紀錄身分相同、檔案仍遺失時才刪除紀錄。
@@ -70,8 +66,8 @@ disk、路徑或識別值改變，或無法確認檔案狀態時，保留紀錄�
 檢查檔案是否存在時若拋出例外，指令會將該筆計為 `failed`，並以結束代碼 `2` 結束。
 清理時會保留該筆紀錄。
 
-清理不是全部成功才生效。發生資料庫錯誤時，指令會停止並以 exit code `2` 結束，
-先前批次已刪除的紀錄不會還原。實體檔案不會被刪除。
+遇到資料庫錯誤時，稽核會以結束代碼 `2` 停止。先前批次已刪除的紀錄不會還原。
+指令只會刪除資料庫紀錄。
 
 ## 結束代碼
 

@@ -12,8 +12,8 @@
   關閉回傳的 stream。
 - `fromBase64()` 的編碼字串會留在記憶體，解碼結果則寫入暫存檔。
   `fromContent()` 和 `fromGeneratedContent()` 接收的完整字串也會占用記憶體。大型檔案請依來源改用上傳、本機路徑或遠端網址。
-- `csv()` 會立即走訪 iterable，並在回傳 `PendingFile` 前把產生的完整輸出放入 PHP 記憶體。
-  之後的 `maxSize()` 無法限制產生階段的記憶體；大型匯出請先串流寫入本機檔案，再用 `fromPath()`。
+- `csv()` 會在 `maxSize()` 生效前把整份 CSV 放進記憶體。大型匯出請先串流寫入本機檔案，
+  再用 `fromPath()`。
 - 原始來源會先通過 size 與 MIME 規則，但合格圖片的處理記憶體仍可能遠高於壓縮大小；
   請使用應用程式接受的最大圖片尺寸測試。
 - `Overwrite` 需要接近現有檔案大小的本機暫存空間，耗時也高於一般儲存。除非 path
@@ -39,12 +39,11 @@
   要確認使用者可存取壓縮檔內的每個檔案。
 - 上傳檔案前仍須保留 Laravel request validation。
 - 原始檔名、client MIME、metadata、遠端內容與儲存 bytes 都是不可信任資料。
-- 只有應用程式自行產生 bytes 並保證格式時才能使用 `fromGeneratedContent()`。不建議把 upload、
-  HTTP response、Data URI、使用者選擇的 path 或其他不可信任 bytes 連同 Symfony 可識別 MIME type
-  傳入；請使用一般來源入口，讓 `finfo` 檢查內容。
+- 只有應用程式自行產生內容且能確認格式時，才應透過 `fromGeneratedContent()` 指定可信任的 MIME 類型。
+  上傳檔案、HTTP 回應、Data URI 等不可信任內容，請用對應的來源方法，讓 `finfo` 檢查內容。
+  傳給 `fromPath()` 的路徑應先由應用程式確認。
 - 高敏感度流程請優先使用 MIME allowlist。同源提供檔案時，應考慮封鎖 HTML 與 SVG。
 - 敏感檔案請使用 private disk 與短效 temporary URL。
-- 不要將使用者控制的伺服器路徑傳給 `fromPath()`。
 - 除了 FileMagic 的 `max_size`，也要設定 Web Server 與 PHP request limits。
 - 應用程式風險模型需要時，請加入 antivirus 或 content scanning。
 - 遠端匯入預設驗證 TLS 並封鎖 private network targets。正式環境請保留這些預設，

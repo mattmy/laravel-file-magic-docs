@@ -14,9 +14,8 @@ remote downloads, processed images, and overwrite backups.
 - `fromBase64()` keeps the encoded string in memory and decodes to a temporary file.
   `fromContent()` and `fromGeneratedContent()` receive the complete string in memory. For large
   files, use an upload, a local path, or a remote URL as appropriate.
-- `csv()` consumes its iterable immediately and fully materializes the generated output in PHP
-  memory before returning `PendingFile`. A later `maxSize()` does not limit generation memory.
-  For large exports, stream to a local file in application code, then use `fromPath()`.
+- `csv()` holds the complete output in memory before `maxSize()` applies. For large exports,
+  stream to a local file, then use `fromPath()`.
 - Source size and MIME rules are applied before image processing, but accepted images can still
   need much more memory than their compressed size. Test with the largest dimensions your
   application accepts.
@@ -48,14 +47,12 @@ largest files and batches your application accepts.
 - Keep Laravel request validation in front of uploaded files.
 - Treat original names, client MIME values, metadata, remote content, and stored bytes as
   untrusted data.
-- Use `fromGeneratedContent()` only when application code created the bytes and guarantees their
-  format. It is not recommended to pass uploads, HTTP responses, Data URIs, user-selected paths,
-  or other untrusted bytes with a Symfony-recognized MIME type; use the ordinary source method so
-  `finfo` inspects them.
+- Use a trusted MIME type with `fromGeneratedContent()` only for content your app creates and can
+  verify. For uploads, HTTP responses, Data URIs, and other untrusted content, use the matching
+  source method so `finfo` checks the bytes. Pass only app-approved paths to `fromPath()`.
 - Prefer MIME allowlists for sensitive workflows. Consider blocking HTML and SVG when files
   are served from the same origin.
 - Keep sensitive files on private disks and use short-lived temporary URLs.
-- Never pass a user-controlled server path to `fromPath()`.
 - Configure web-server and PHP request limits in addition to FileMagic's `max_size`.
 - Add antivirus or content scanning when required by the application's threat model.
 - Remote imports verify TLS and block private network targets by default. Keep these defaults,

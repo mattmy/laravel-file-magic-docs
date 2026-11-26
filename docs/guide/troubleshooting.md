@@ -40,6 +40,4 @@ the result private unless your application safely isolates it.
 
 ## A development HTTPS URL fails certificate verification
 
-Fix the certificate when possible. In a controlled environment only, use
-`RemoteFileOptions::withoutTlsVerification()`. This does not enable HTTP, private hosts, or
-unsupported ports.
+Fix the certificate first. For controlled development environments, see the [TLS verification options](/guide/remote-files#tls-verification).

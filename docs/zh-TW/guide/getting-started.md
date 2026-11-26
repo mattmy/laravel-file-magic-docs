@@ -1,7 +1,7 @@
 # 開始使用
 
-FileMagic 讓 Laravel 應用程式能用同一套流程接收、儲存、查詢、下載與刪除檔案。
-儲存成功後會取得一筆 `StoredFile` 紀錄，之後可透過 `FileMagic::find()` 讀取或操作檔案。
+FileMagic 將檔案存到 Laravel Filesystem 磁碟，並回傳一筆 `StoredFile` 紀錄。
+要讀取、下載或刪除檔案時，可用 `FileMagic::find()` 查詢。
 
 ## 系統需求
 
@@ -9,7 +9,7 @@ FileMagic 讓 Laravel 應用程式能用同一套流程接收、儲存、查詢�
 | --- | --- |
 | PHP | 8.3–8.x |
 | Laravel | 12 或 13 |
-| PHP extension | `ext-fileinfo` |
+| PHP 擴充套件 | `ext-fileinfo` |
 
 CI 會在 PHP 8.3、8.4、8.5 分別測試 Laravel 12 與 13。應用程式還需要設定好
 Laravel Filesystem 磁碟與資料庫連線。

@@ -1,7 +1,5 @@
 # API 參考
 
-程式碼區塊列出方法簽章。使用範例請參考各節連結的說明頁面。
-
 ## 建立待儲存檔案
 
 ```php
@@ -50,8 +48,8 @@ $pending->store(): StoredFile
 
 - `onDisk()`：選擇已設定的 Laravel Filesystem disk，disk 名稱不可為空字串。
 - `inDirectory()`：選擇以 `/` 分隔、相對於 disk 的目錄；空字串代表根目錄。不安全或模糊路徑會拋出 `InvalidStoragePath`。
-- `named()`：設定不含副檔名的檔名。不安全、保留、空白或超過 200 字元的名稱會拋出
-  `InvalidFileName`。
+- `named()`：設定檔名主體，保留其中的點號，再依 MIME 類型附加副檔名。
+  名稱不安全、屬於保留名稱、為空字串或超過 200 字元時，會拋出 `InvalidFileName`。
 - `visibility()`：選擇 `FileVisibility::Private` 或 `FileVisibility::Public`。
 - `onCollision()`：路徑已存在時選擇 `Unique`、`Error` 或 `Overwrite`。
 - `maxSize()`：以正整數設定原始輸入與最終儲存結果可接受的最大 bytes。
@@ -114,7 +112,7 @@ $query->delete(): int
 | `disk` | `string` | Laravel Filesystem disk。 |
 | `path` | `string` | 相對於 disk 的完整路徑。 |
 | `location_hash` | `string` | Disk 與 path 組合的識別值。 |
-| `filename` | `string` | 不含副檔名的儲存檔名。 |
+| `filename` | `string` | 儲存檔名的主體，尚未附加套件決定的副檔名。 |
 | `original_filename` | `?string` | 有提供時的原始檔名。 |
 | `extension` | `string` | 儲存副檔名。 |
 | `mime_type` | `string` | 檔案的 MIME type。 |

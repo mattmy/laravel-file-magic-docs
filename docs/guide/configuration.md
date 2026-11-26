@@ -40,12 +40,11 @@ The blocklist takes priority over the allowlist. Omitting `blocked_mime_types` k
 blocklist; setting it to `[]` explicitly disables it. `allowMimeTypes()` and `blockMimeTypes()`
 replace their corresponding global lists rather than merging with them.
 
-FileMagic validates settings when the feature uses them. Use PHP integers for numeric settings,
-lists with consecutive keys starting at zero, and the exact enum values shown in the table. Disk names
-must exist in `filesystems.disks`. Invalid settings throw `InvalidConfiguration` with the setting name.
+Use PHP integers for numeric settings, lists with consecutive keys starting at zero, and the enum
+values in the table. Disk names must exist in `filesystems.disks`. FileMagic generally validates
+options when the feature uses them. Invalid values generally throw `InvalidConfiguration`.
 
-Changing `table` after the published migration has run does not rename existing data. Create a
-new migration for an already deployed application. See [Models and exceptions](/guide/models-and-exceptions)
+To rename a table after deployment, create a new migration and update `table` to match. See [Models and exceptions](/guide/models-and-exceptions)
 when replacing `model` or `table`.
 
 ## Optional collision-lock deployment
@@ -64,8 +63,9 @@ backend. The array store is suitable only for single-process tests. The file sto
 multiple servers only when they truly share the same filesystem. Set `lease_seconds` longer
 than the worst-case multi-lock wait, storage I/O, reconciliation, database mutation, and recovery
 time. Store lock timeout throws `FileWriteFailed`; batch deletion reports `PartialFileDeletion`,
-and audit cleanup exits with code `2`. Invalid lock configuration raises `InvalidConfiguration`
-before target mutation; it can also prevent the audit command from being constructed.
+and audit cleanup exits with code `2`. FileMagic validates enabled lock settings when it initializes
+the lock service. Invalid settings throw `InvalidConfiguration` and can prevent a lookup or read-only
+audit from starting.
 
 Each distinct path needs its own lock. For N paths, the worst-case acquisition wait can approach
 `N × collision_lock.wait_seconds`. Leases are not automatically extended. See

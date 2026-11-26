@@ -1,7 +1,5 @@
 # API reference
 
-The code blocks show method signatures. See the linked guides for usage examples.
-
 ## Create a pending file
 
 ```php
@@ -52,8 +50,8 @@ $pending->store(): StoredFile
 - `onDisk()` selects a configured Laravel Filesystem disk and rejects an empty name.
 - `inDirectory()` selects a canonical forward-slash relative directory; an empty string selects
   the disk root. Unsafe or ambiguous paths throw `InvalidStoragePath`.
-- `named()` selects a filename without its extension. Unsafe, reserved, empty, or names longer
-  than 200 characters throw `InvalidFileName`.
+- `named()` sets the base name, including any dots. FileMagic appends the MIME-derived extension.
+  Unsafe or reserved names, empty names, and names longer than 200 characters throw `InvalidFileName`.
 - `visibility()` selects `FileVisibility::Private` or `FileVisibility::Public`.
 - `onCollision()` selects `Unique`, `Error`, or `Overwrite` when the path already exists.
 - `maxSize()` sets a positive maximum byte count for both the original and stored result.
@@ -116,7 +114,7 @@ With no matches, `one()` returns `null`, `get()` and `urls()` return empty colle
 | `disk` | `string` | Laravel Filesystem disk. |
 | `path` | `string` | Full path relative to the disk. |
 | `location_hash` | `string` | Identifier for the disk and path combination. |
-| `filename` | `string` | Stored filename without extension. |
+| `filename` | `string` | Base name before FileMagic appends the extension. |
 | `original_filename` | `?string` | Original filename when available. |
 | `extension` | `string` | Stored extension. |
 | `mime_type` | `string` | MIME type determined for the file. |

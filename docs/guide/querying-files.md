@@ -40,10 +40,10 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-All three forms preserve input order and remove duplicates. The first operation on a `FileQuery`
-loads current records in one query with the configured model's global scopes. A supplied model
-contributes only its primary key. Later operations reuse the results. Empty arrays and collections
-need no query.
+`FileQuery` resolves targets on first use and reuses the results. It runs at most one query for the
+file records, applies the configured model's global scopes, keeps input order, and removes duplicates.
+Eloquent can run additional queries for eager-loaded relationships. A supplied model contributes
+only its primary key. An empty target list runs no query.
 
 Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
 

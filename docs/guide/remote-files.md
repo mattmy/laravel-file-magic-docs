@@ -61,8 +61,7 @@ Pass any values you need from your app's `remote` configuration explicitly.
 | `allowedPorts` | `list<int>` | `[80, 443]` | Non-empty port allowlist; values must be between `1` and `65535` |
 | `allowedPrivateHosts` | `list<string>` | `[]` | Exact hosts explicitly allowed to resolve to private addresses |
 
-Port `80` being present does not enable HTTP. With the default `allowHttp: false`,
-HTTP is still rejected. Enable standard HTTP without repeating the default ports:
+To use HTTP on port `80`, set `allowHttp: true`. The default port list already includes `80`.
 
 ```php
 $file = FileMagic::fromUrl(
@@ -80,10 +79,9 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-An empty `allowedPorts` array is invalid; it never means every port. Host lists are
-normalized and compared exactly. `allowedHosts: []` permits public hosts only after
-all DNS and IP checks. Private networks remain blocked unless an exact hostname is
-present in `allowedPrivateHosts`.
+Host lists match normalized names exactly. With `allowedHosts: []`, public hosts can pass
+without being listed, provided they pass DNS and IP checks. To allow a host that resolves to a
+private address, list it in `allowedPrivateHosts`. If `allowedHosts` is non-empty, include that host there too.
 
 ### TLS verification
 

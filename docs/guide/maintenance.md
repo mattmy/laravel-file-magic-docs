@@ -21,8 +21,8 @@ php artisan file-magic:audit --chunk=250
 | `--force` | Boolean flag, default `false` | Skip confirmation in cleanup mode; using it alone exits with code `2` |
 
 Invalid option values exit with code `2` before scanning or changing data.
-The command uses the configured FileMagic model, connection, table, and primary key. It checks
-records even when the model has global scopes, so use `--disk` when the audit must be narrowed.
+The command uses the configured FileMagic model, connection, table, and primary key. It ignores
+global scopes and skips default eager loads. Use `--disk` to limit the audit.
 
 Each missing finding shows only its database key, disk, and storage-relative
 path. The final summary includes `checked`, `healthy`, `missing`, `deleted`,
@@ -43,9 +43,6 @@ accept the risk:
 ```bash
 php artisan file-magic:audit --delete-missing-records --force --no-interaction
 ```
-
-`--force` is invalid without `--delete-missing-records`. Storage checks that
-throw exceptions remain unknown and their records are never deleted.
 
 Cleanup reloads initially missing records and checks their storage objects again. When locking
 is enabled, both steps run under the path locks. Only an unchanged record whose object is still
@@ -77,9 +74,8 @@ operations that exceed the lease remain outside that guarantee.
 An existence check that throws is reported as `failed`, with exit code `2`. Cleanup keeps the
 affected record.
 
-Cleanup is not all-or-nothing. If a database error occurs, the command stops with exit code
-`2`, but records handled earlier may already be deleted. The command never deletes storage
-objects.
+A database error stops the audit with exit code `2`. Deletions from earlier batches stay in effect.
+The command only deletes database records.
 
 ## Exit codes
 

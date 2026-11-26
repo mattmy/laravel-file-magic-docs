@@ -52,9 +52,10 @@ FileMagic reloads records before deletion. It skips records that are already gon
 whose disk, path, or location identifier changed. With path locking enabled, FileMagic takes the
 locks before reloading and holds them until the operation finishes.
 
-If any targets remain unresolved, FileMagic deletes the confirmed records and throws
-`PartialFileDeletion`. Check `deletedCount()`, `failedCount()`, and `failedKeys()`. Before retrying
-with a fresh `find()`, verify that the failed records still point to files you intend to delete.
+`find()` skips targets without a matching record. If a matched record cannot be safely deleted,
+FileMagic keeps it, deletes the confirmed records, and throws `PartialFileDeletion`. Check
+`deletedCount()`, `failedCount()`, and `failedKeys()`. Before retrying with a fresh `find()`,
+confirm that the failed records still point to the files you intend to delete.
 
 A batch is not all-or-nothing because storage and the database cannot share one transaction.
 Earlier files may already be deleted when a later file fails. Batch deletion does not create

@@ -35,8 +35,7 @@ $file = FileMagic::fromContent(
 
 The MIME argument is only a source hint. Stored MIME and extension come from content inspection.
 
-Application-generated content whose format is guaranteed by the application can use a trusted MIME
-type:
+Use `fromGeneratedContent()` when your app generates the content and can guarantee its format.
 
 ```php
 $file = FileMagic::fromGeneratedContent(
@@ -53,7 +52,8 @@ to use the same content inspection as `fromContent()`. An unmapped value remains
 An extension mapping cannot verify the format or safety of the contents. Use
 `fromContent($request->getContent())` for a raw HTTP request body. Never pass the body and its
 `Content-Type` header to `fromGeneratedContent()`.
-Both content methods hold the full `$contents` string in PHP memory. For large files, use an upload,
+
+Both content methods receive the full `$contents` string in PHP memory. For large files, use an upload,
 a local path, or a remote URL as appropriate.
 
 Plain Base64:
@@ -100,10 +100,13 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-`named()` takes a name without extension. Directories use canonical forward-slash-separated
-relative paths; an empty directory means the disk root. Leading or trailing separators,
-backslashes, repeated separators, whitespace around segments, control or Windows-unsafe
-characters, `.` and `..`, and reserved Windows names are rejected rather than normalized.
+`named()` sets the base name. FileMagic keeps dots in the name and appends an extension based on the
+file's MIME type. For example, `FileMagic::text('Hello')->named('report.txt')->store()` saves
+`report.txt.txt` if that name is available.
+
+Use `/` to separate directory segments. An empty string selects the disk root. FileMagic rejects
+leading, trailing, or repeated separators, backslashes, whitespace around segments, control or
+Windows-unsafe characters, `.` and `..`, and reserved Windows names.
 Filenames follow the same character and reserved-name rules and cannot start or end with a dot.
 
 Collision policies:

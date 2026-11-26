@@ -42,8 +42,8 @@ $file = FileMagic::csv([
 各列的鍵與順序都必須一致，每個值必須是純量或 `null`。CSV 使用不含 BOM 的 UTF-8，
 以逗號分隔、雙引號包住需要引號的欄位，並以 CRLF 換行。
 
-`csv()` 會立即走訪 iterable，並在回傳 `PendingFile` 前把產生的完整輸出放入 PHP 記憶體。
-CSV 沒有獨立的輸出上限，之後設定 `maxSize()` 也無法限制產生 CSV 時的記憶體用量。
+`csv()` 會讀完所有資料列，並在回傳 `PendingFile` 前把整份 CSV 放進 PHP 記憶體。
+產生 CSV 時沒有獨立的大小上限。`maxSize()` 會在呼叫 `store()` 時才生效。
 大型匯出請先由應用程式串流寫入本機檔案，再用 `fromPath()` 儲存。
 
 三個方法都會回傳 `PendingFile`，可像上傳檔案一樣，在呼叫 `store()` 前調整儲存選項。

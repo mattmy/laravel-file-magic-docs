@@ -35,9 +35,9 @@ $file = FileMagic::fromContent(
 )->inDirectory('invoices')->store();
 ```
 
-傳入的 MIME type 只會被視為來源提示。實際儲存的 MIME type 與副檔名會根據檔案內容重新偵測。
+傳入的 MIME 類型只供參考。FileMagic 會從內容偵測 MIME 類型，再決定副檔名。
 
-由應用程式產生、且應用程式能保證格式的內容，可以提供可信任 MIME type：
+如果內容是應用程式自行產生的，而且能保證格式，就可以用 `fromGeneratedContent()` 指定可信任的 MIME 類型。
 
 ```php
 $file = FileMagic::fromGeneratedContent(
@@ -54,7 +54,8 @@ Symfony 找得到對應的副檔名時，FileMagic 才會採用傳入的 MIME �
 副檔名對應無法確認內容格式或安全性。要儲存 HTTP 請求的原始內容，請使用
 `fromContent($request->getContent())`。請勿把原始內容和請求的 `Content-Type` 標頭一起傳給
 `fromGeneratedContent()`。
-兩種方法的完整 `$contents` 字串都會占用 PHP 記憶體。大型檔案請依來源改用上傳、本機路徑或遠端網址。
+
+這兩個方法都會接收已存在於 PHP 記憶體的完整 `$contents` 字串。大型檔案請依來源改用上傳、本機路徑或遠端網址。
 
 ### 一般 Base64
 
@@ -99,7 +100,8 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-`named()` 接受不含副檔名的檔名。副檔名會由 FileMagic 根據可信任的 MIME type 決定。
+`named()` 設定檔名主體。FileMagic 會保留其中的點號，再依 MIME 類型附加副檔名。
+例如 `FileMagic::text('Hello')->named('report.txt')->store()` 在檔名未被占用時會儲存為 `report.txt.txt`。
 
 儲存目錄必須使用 `/` 分隔，且相對於 disk 根目錄；空字串代表根目錄。
 路徑開頭或結尾的 `/`、反斜線、重複的 `/`、每段前後的空白、控制字元、Windows
@@ -129,7 +131,7 @@ CollisionPolicy::Overwrite;
 儲存、批次刪除與稽核清理如何共用鎖，請參考[設定參考](/zh-TW/guide/configuration)。
 
 
-## 檔案大小與 MIME type 限制
+## 檔案大小與 MIME 類型限制 {#檔案大小與-mime-type-限制}
 
 限制單次操作的檔案大小：
 
@@ -139,7 +141,7 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-設定單次操作的 MIME type 白名單：
+只允許指定的 MIME 類型。
 
 ```php
 $file = FileMagic::fromUpload($uploadedFile)
@@ -151,7 +153,7 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-設定單次操作的 MIME type 黑名單：
+封鎖指定的 MIME 類型。
 
 ```php
 $file = FileMagic::fromUpload($uploadedFile)

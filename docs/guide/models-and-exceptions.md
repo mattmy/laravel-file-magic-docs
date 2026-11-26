@@ -29,8 +29,7 @@ If you need individual model events, explicitly retrieve the model and call `$fi
 That path does not use shared path locks or compensate if the physical deletion succeeds but
 the database deletion fails. Use `FileMagic::find(...)->delete()` for coordinated deletion.
 
-Configure a custom table before publishing the migration. If already deployed, create a new
-migration rather than editing migration history.
+Set the table name before running the migration. To rename an existing table, create a new migration.
 
 ## Exceptions
 

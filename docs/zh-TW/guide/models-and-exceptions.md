@@ -38,13 +38,7 @@ final class StoredFile extends BaseStoredFile
 
 ## 自訂資料表
 
-發佈及執行 migration 前修改：
-
-```php
-'table' => 'assets',
-```
-
-如果 migration 已經部署到正式環境，應建立新的 migration 重新命名資料表，不要修改已經部署的 migration。
+請在執行 migration 前設定表名。要重新命名既有資料表時，請新增 migration。
 
 ## 例外
 

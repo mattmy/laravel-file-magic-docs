@@ -40,9 +40,9 @@ $collection = FileMagic::find(collect([
 ]))->get();
 ```
 
-三種形式都會保留輸入順序並去除重複紀錄。第一次操作 `FileQuery` 時，會用一筆查詢取得目前的紀錄，
-並套用設定 Model 的全域 scope。傳入的 Model 只提供主鍵。同一個 `FileQuery` 的後續操作會沿用查詢結果。
-空陣列或空 Collection 不會查詢資料庫。
+`FileQuery` 第一次使用時才查詢檔案紀錄，後續操作會沿用結果。檔案紀錄最多查詢一次，
+會套用所設定 Model 的全域範圍、保留輸入順序並去除重複紀錄。Eloquent 預先載入關聯時可能另外查詢。
+傳入的 Model 只提供主鍵。沒有查詢目標時不會查詢資料庫。
 
 陣列與 Collection 必須是一維結構，且每個元素都必須是正整數 ID、合法 UUID 或已儲存的 `StoredFile`。
 有無效元素時會拋出 `InvalidFileTarget`。

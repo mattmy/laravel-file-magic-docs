@@ -49,7 +49,7 @@ $file = FileMagic::fromUrl(
 
 | 選項 | 型別 | 預設值 | 行為 |
 | --- | --- | --- | --- |
-| `verifyTls` | `bool` | `true` | 驗證 HTTPS certificate、hostname 與 certificate chain |
+| `verifyTls` | `bool` | `true` | 驗證 HTTPS 憑證、主機名稱與憑證鏈 |
 | `allowHttp` | `bool` | `false` | 明確允許未加密 HTTP |
 | `allowHtml` | `bool` | `false` | 允許偵測為 HTML 或 XHTML 的內容 |
 | `connectTimeoutSeconds` | `int` | `5` | 連線逾時，必須大於零 |
@@ -59,8 +59,7 @@ $file = FileMagic::fromUrl(
 | `allowedPorts` | `list<int>` | `[80, 443]` | 不可為空，每個值必須介於 `1` 至 `65535` |
 | `allowedPrivateHosts` | `list<string>` | `[]` | 明確允許解析到 private address 的精確 host |
 
-清單包含 port `80` 不代表預設會允許 HTTP；預設 `allowHttp: false` 仍會拒絕 HTTP。
-如需使用標準 HTTP，不必重複設定預設 port：
+若要透過連接埠 `80` 使用 HTTP，請設定 `allowHttp: true`。預設的連接埠清單已包含 `80`。
 
 ```php
 $file = FileMagic::fromUrl(
@@ -69,7 +68,7 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-非標準 port 必須明確加入：
+若要使用其他連接埠，請將它加到允許清單。
 
 ```php
 $file = FileMagic::fromUrl(
@@ -78,14 +77,13 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-`allowedPorts` 空陣列是無效設定，絕不代表允許全部 port。Host 名單不區分大小寫，
-並使用完整名稱比對。`allowedHosts: []` 只允許通過全部 DNS 與 IP 檢查的 public host；private
-network 仍會被封鎖，除非精確 host 已列在 `allowedPrivateHosts`。
+主機清單會比對正規化後的完整名稱。`allowedHosts` 為空時，通過 DNS 與 IP 檢查的公開主機無須列入清單。
+若要允許解析到私有位址的主機，請將它加入 `allowedPrivateHosts`。如果也設定了非空的 `allowedHosts`，
+該主機要同時出現在兩份清單中。
 
 ### TLS 驗證
 
-TLS 驗證預設開啟。FileMagic 不會靜默關閉驗證，也不會把 HTTPS 降級為 HTTP。在受控
-的開發或內部環境使用 self-signed certificate 時，可以明確停用：
+TLS 驗證預設開啟。FileMagic 不會靜默關閉驗證，也不會把 HTTPS 降級為 HTTP。在受控的開發或內部環境使用自簽憑證時，可以明確停用驗證。
 
 ```php
 $file = FileMagic::fromUrl(

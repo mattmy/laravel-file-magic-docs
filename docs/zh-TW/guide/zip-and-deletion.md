@@ -51,9 +51,9 @@ FileMagic 會依磁碟批次刪除，只有某個磁碟的批次失敗時，才�
 FileMagic 會在刪除前重新查詢紀錄，略過已移除的紀錄，並保留磁碟、路徑或位置識別值已變更的紀錄。
 啟用路徑鎖定後，會在重查前取得鎖，並持有到整批操作完成。
 
-只要有目標未完成，FileMagic 就會先刪除已確認的紀錄，再拋出 `PartialFileDeletion`。
-可用 `deletedCount()`、`failedCount()` 和 `failedKeys()` 查看結果。重新呼叫 `find()` 重試前，
-請先確認失敗的紀錄仍指向你要刪除的檔案。
+`find()` 會略過找不到紀錄的目標。如果查到的紀錄無法安全刪除，FileMagic 會保留該筆、
+刪除已確認的紀錄，並拋出 `PartialFileDeletion`。用 `deletedCount()`、`failedCount()` 和
+`failedKeys()` 查看結果。重新呼叫 `find()` 重試前，請確認失敗的紀錄仍指向要刪除的檔案。
 
 檔案儲存空間與資料庫各自執行刪除，因此同一批可能只有部分檔案刪除成功。批次刪除不會建立備份。
 

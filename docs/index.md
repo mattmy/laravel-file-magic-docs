@@ -18,10 +18,10 @@ features:
     details: Accept uploads, local paths, binary content, Base64, generated documents, and remote HTTP(S) files.
   - title: Built for Laravel
     details: Use Laravel Filesystem disks and keep searchable file records in Eloquent.
-  - title: Safer file handling
-    details: Limit file types and sizes, protect remote downloads, and recover failed replacements.
-  - title: Find missing files
-    details: Check whether database records still have matching files and optionally remove missing records.
+  - title: File validation and recovery
+    details: Limit file types and sizes, check remote download targets, and attempt to restore files after a failed overwrite.
+  - title: Audit missing files
+    details: Find records whose files are missing from storage and optionally remove those records.
 ---
 
 ## Requirements

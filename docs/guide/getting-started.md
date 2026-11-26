@@ -1,7 +1,7 @@
 # Getting started
 
-FileMagic gives Laravel applications one workflow for accepting, storing, finding, downloading,
-and deleting files. Store an upload to a Filesystem disk and receive a searchable Eloquent record.
+FileMagic stores files on Laravel Filesystem disks and returns a `StoredFile` record. Use
+`FileMagic::find()` to look up files before reading, downloading, or deleting them.
 
 ## Requirements
 
@@ -80,5 +80,5 @@ To change how this upload is stored, [set options before calling `store()`](/gui
 - [Store uploads, local files, content, and Base64](/guide/storing-files)
 - [Import remote HTTP(S) files safely](/guide/remote-files)
 - [Query, read, and download stored files](/guide/querying-files)
-- [Look up every application-facing method and field](/guide/reference)
+- [Look up API methods and fields](/guide/reference)
 
