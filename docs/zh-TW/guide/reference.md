@@ -26,8 +26,8 @@ FileMagic::csv(iterable $rows): PendingFile
 - `fromUrl()`：建立 HTTP(S) 來源，在 `store()` 時才下載；`$options` 可調整這次下載的規則。
 - `text()`、`json()`、`csv()`：產生可以像一般檔案一樣儲存的內容。
 
-以上方法都回傳 `PendingFile`。完整說明請看[儲存檔案](/zh-TW/guide/storing-files)、
-[遠端檔案](/zh-TW/guide/remote-files)及[文件與圖片](/zh-TW/guide/documents-and-images)。
+使用範例請見[儲存檔案](/zh-TW/guide/storing-files)、[遠端檔案](/zh-TW/guide/remote-files)及
+[文件與圖片](/zh-TW/guide/documents-and-images)。
 
 ## 設定並儲存 PendingFile
 
@@ -53,10 +53,12 @@ $pending->store(): StoredFile
 - `visibility()`：選擇 `FileVisibility::Private` 或 `FileVisibility::Public`。
 - `onCollision()`：路徑已存在時選擇 `Unique`、`Error` 或 `Overwrite`。
 - `maxSize()`：以正整數設定原始輸入與最終儲存結果可接受的最大 bytes。
-- `allowMimeTypes()`：只接受清單中的 MIME type；空清單不額外限制。元素必須是非空字串。
-- `blockMimeTypes()`：拒絕清單中的 MIME type；元素必須是非空字串，清單本身可以為空。
+- `allowMimeTypes()` 只接受清單中的 MIME 類型。空清單不額外限制，清單中的項目須為非空字串。
+- `blockMimeTypes()` 拒絕清單中的 MIME 類型。清單可以為空，清單中的項目須為非空字串。
 - `withMetadata()`：將應用程式資料儲存在檔案紀錄的 `metadata` 欄位。
+  覆寫時會取代整份 metadata。省略可保留原值，傳入 `[]` 可清空。
 - `ownedBy()`：關聯已儲存且主鍵為整數或非空字串的 Eloquent Model，否則拋出 `InvalidFileOwner`。
+  覆寫時省略此選項會保留原擁有者。
 - `resizeImage()`：設定支援圖片的最大寬度與輸出品質；參數為 `null` 時使用設定預設值，
   寬度必須為正整數，品質必須介於 `1` 至 `100`。
 - `store()`：儲存實體檔案並回傳 `StoredFile` 紀錄。
@@ -64,11 +66,11 @@ $pending->store(): StoredFile
 ## 尋找檔案
 
 ```php
-FileMagic::find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+FileMagic::find(mixed ...$targets): FileQuery
 ```
 
-`$targets` 可使用 ID、UUID、已存在的 `StoredFile` Model、一維 array 及 Laravel
-Collection，也能同時傳入多個不同類型的 targets。完整說明請看
+可傳入 ID、十進位 ID 字串、UUID 或已儲存的 `StoredFile` Model。可將不同類型混合傳入，或放在一維陣列
+及 Laravel Collection 中。FileMagic 會略過無效純量。詳見
 [查詢檔案](/zh-TW/guide/querying-files)。
 
 ```php
@@ -93,7 +95,7 @@ $query->delete(): int
 - `temporaryUrl()`：取得 temporary URL；`$expiration` 為 `null` 時使用設定的有效時間。
 - `contents()`：以 string 取得第一筆符合檔案的完整內容。
 - `readStream()`：取得第一筆符合檔案的 readable stream；使用完畢後必須關閉。
-- `download()`：回傳串流下載；`$name` 可取代下載檔名。
+- `download()` 以串流傳送檔案。預設使用清理過的原始檔名，沒有可用的原始檔名時使用儲存檔名。可用 `$name` 自訂名稱。
 - `downloadZip()`：將全部符合檔案回傳為 ZIP 下載；`$name` 設定 ZIP 檔名。
 - `delete()`：刪除符合的實體檔案與紀錄，回傳完成刪除的數量。
 
@@ -107,19 +109,19 @@ $query->delete(): int
 
 | 欄位 | 型別 | 資料 |
 | --- | --- | --- |
-| `id` | `int` | Database key。 |
+| `id` | `int` | 資料庫主鍵。 |
 | `uuid` | `string` | 對外使用的唯一識別碼。 |
 | `disk` | `string` | Laravel Filesystem disk。 |
-| `path` | `string` | 相對於 disk 的完整路徑。 |
-| `location_hash` | `string` | Disk 與 path 組合的識別值。 |
+| `path` | `string` | 相對於磁碟根目錄的路徑。 |
+| `location_hash` | `string` | 磁碟與路徑組合的識別值。 |
 | `filename` | `string` | 儲存檔名的主體，尚未附加套件決定的副檔名。 |
 | `original_filename` | `?string` | 有提供時的原始檔名。 |
 | `extension` | `string` | 儲存副檔名。 |
-| `mime_type` | `string` | 檔案的 MIME type。 |
-| `size` | `int` | 檔案 bytes。 |
-| `checksum` | `?string` | 有提供時的 checksum。 |
-| `visibility` | `FileVisibility` | Public 或 private visibility。 |
-| `owner_type`, `owner_id` | `?string` | Polymorphic owner identifiers。 |
+| `mime_type` | `string` | 檔案的 MIME 類型。 |
+| `size` | `int` | 檔案大小，單位為位元組。 |
+| `checksum` | `?string` | 有提供時的檔案校驗值。 |
+| `visibility` | `FileVisibility` | 公開或私人可見性。 |
+| `owner_type`, `owner_id` | `?string` | 多型關聯的擁有者類型與識別碼。 |
 | `metadata` | `?array` | 與檔案一同儲存的應用程式資料。 |
 | `created_at`, `updated_at` | `?Carbon` | 紀錄時間。 |
 | `owner` | `?Model` | 關聯的 Eloquent Model。 |
@@ -183,8 +185,7 @@ CollisionPolicy::Error
 CollisionPolicy::Overwrite
 ```
 
-`Unique` 在目標存在時更換檔名，`Error` 拒絕檔名碰撞，`Overwrite` 取代檔案並保持
-相同 storage path。
+`Unique` 在目標存在時更換檔名，`Error` 遇到相同路徑時拋出例外，`Overwrite` 在原路徑取代檔案。
 
 ## 例外結果方法
 

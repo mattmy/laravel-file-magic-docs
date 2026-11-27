@@ -1,6 +1,6 @@
 # 設定參考
 
-要調整預設值，請先發佈 `config/file-magic.php`。
+要調整預設值，請先發布 `config/file-magic.php`。
 
 ```bash
 php artisan vendor:publish --tag=file-magic-config
@@ -10,7 +10,7 @@ php artisan vendor:publish --tag=file-magic-config
 
 | 設定 | 預設值 | 用途 |
 | --- | --- | --- |
-| `disk` | `FILE_MAGIC_DISK` → `FILESYSTEM_DISK` → `local` | 未呼叫 `onDisk()` 時使用的 Filesystem disk。 |
+| `disk` | `FILE_MAGIC_DISK` → `FILESYSTEM_DISK` → `local` | 未呼叫 `onDisk()` 時使用的 Laravel 儲存磁碟。 |
 | `directory` | `files` | 未呼叫 `inDirectory()` 時使用的相對目錄。 |
 | `visibility` | `private` | 未呼叫 `visibility()` 時使用 `private` 或 `public`。 |
 | `max_size` | `104857600` | 原始檔案與圖片處理後的大小上限，以位元組計算。 |
@@ -21,14 +21,14 @@ php artisan vendor:publish --tag=file-magic-config
 | `collision_lock.store` | `null` | 路徑鎖使用的快取儲存區。`null` 使用 Laravel 預設值。 |
 | `collision_lock.lease_seconds` | `300` | 鎖的有效秒數，須為正整數。 |
 | `collision_lock.wait_seconds` | `10` | 每把鎖最多等待的秒數，須為正整數。 |
-| `checksum_algorithm` | `sha256` | 計算 checksum 的受支援 PHP hash 演算法。 |
-| `temporary_url_ttl` | `5` | Temporary URL 的預設有效分鐘數。 |
-| `model` | 套件 `StoredFile` | Eloquent Model class；自訂 class 必須繼承套件 Model 並使用設定的資料表。 |
-| `table` | `stored_files` | Model 與已發佈 migration 使用的資料表；自訂 Model 必須設定相同的 `$table`。 |
+| `checksum_algorithm` | `sha256` | 計算檔案校驗值的 PHP 雜湊演算法。 |
+| `temporary_url_ttl` | `5` | 暫時網址的預設有效分鐘數。 |
+| `model` | 套件 `StoredFile` | 自訂 Eloquent Model 必須繼承 `StoredFile` 並使用設定的資料表。 |
+| `table` | `stored_files` | Model 與 migration 使用的資料表。自訂 Model 的 `$table` 必須相符。 |
 | `image.quality` | `80` | `resizeImage()` 未指定品質時使用的輸出品質。 |
 | `image.max_width` | `1920` | `resizeImage()` 未指定寬度時使用的最大寬度。 |
 | `zip.max_files` | `100` | 單次 ZIP 下載的紀錄數量上限。 |
-| `zip.max_size` | `1073741824` | 單次 ZIP 下載的未壓縮來源總 bytes 上限。 |
+| `zip.max_size` | `1073741824` | 單次 ZIP 下載的未壓縮總大小上限，單位為位元組。 |
 | `remote.connect_timeout` | `5` | `fromUrl()` 的連線逾時秒數。 |
 | `remote.timeout` | `30` | 每次 HTTP 請求的逾時秒數。重新導向會重新計時。 |
 | `remote.max_redirects` | `3` | 重新導向次數上限，範圍為 `0` 至 `10`。 |
@@ -39,9 +39,9 @@ php artisan vendor:publish --tag=file-magic-config
 省略 `blocked_mime_types` 會保留預設封鎖，明確設為 `[]` 才會取消。
 `allowMimeTypes()` 與 `blockMimeTypes()` 都會取代對應的全域清單，不會合併。
 
-數值請用 PHP 整數，清單索引從 `0` 開始且須連續，列舉值須與表中所列一致。
-磁碟名稱必須存在於 `filesystems.disks`。FileMagic 通常會在使用對應功能時驗證設定。
-設定值無效時一般會拋出 `InvalidConfiguration`。
+數值請用 PHP 整數，清單索引從 `0` 開始且須連續。請在 `filesystems.disks` 設定磁碟名稱。
+FileMagic 會在使用功能時驗證大部分設定。全域 `directory` 無效時拋出 `InvalidConfiguration`。
+傳給 `inDirectory()` 的路徑無效時則拋出 `InvalidStoragePath`。
 
 部署後若要重新命名資料表，請新增 migration，並將 `table` 改成新的表名。更換 `model` 或 `table` 時，另請參考
 [Model 與例外](/zh-TW/guide/models-and-exceptions)。
@@ -55,10 +55,8 @@ php artisan vendor:publish --tag=file-magic-config
 例如 Redis、Memcached、DynamoDB、database、file 或 array。不支援鎖定或不存在的
 儲存區會被拒絕；停用時不會解析或驗證 `store`、`lease_seconds` 與 `wait_seconds`。
 
-所有可能修改相同 storage 路徑的應用程式行程，都必須使用同一個共享快取後端。
-Array store 只適合單一行程測試；file store 要跨伺服器協調時，必須確實共用同一個檔案系統。
-`lease_seconds` 應長於最壞情況下取得所有鎖、storage 讀寫、狀態確認、資料庫修改及失敗還原
-所需的總時間。
+需要協調同一路徑的行程必須共用快取後端。`array` 快取只適合單一行程測試。跨伺服器使用 `file`
+快取時，伺服器必須共用檔案系統。`lease_seconds` 應涵蓋取得所有鎖、儲存讀寫、資料庫修改及還原的時間。
 
 等待鎖逾時時，儲存會拋出 `FileWriteFailed`，批次刪除會拋出 `PartialFileDeletion`，稽核清理則以
 結束代碼 `2` 結束。啟用鎖定後，FileMagic 會在初始化鎖定服務時驗證設定。設定無效時會拋出
@@ -78,5 +76,4 @@ FILE_MAGIC_DIRECTORY=uploads
 FILE_MAGIC_VISIBILITY=private
 ```
 
-`FILE_MAGIC_DISK` 未設定時會使用 Laravel 的 `FILESYSTEM_DISK`，再未設定則使用 `local`。其他選項可在發佈後的
-`config/file-magic.php` 修改。
+其他選項可在發布後的 `config/file-magic.php` 修改。

@@ -2,7 +2,7 @@
 
 ## Generate TXT, JSON, and CSV documents
 
-### Create a UTF-8 TXT document:
+### UTF-8 text {#create-a-utf-8-txt-document}
 
 ```php
 $file = FileMagic::text("First line\nSecond line")
@@ -14,7 +14,7 @@ $file = FileMagic::text("First line\nSecond line")
 
 `text()` preserves the input exactly, including whitespace and line endings. An empty string creates an empty `.txt` file.
 
-### Create a JSON document:
+### JSON {#create-a-json-document}
 
 ```php
 $file = FileMagic::json([
@@ -25,9 +25,10 @@ $file = FileMagic::json([
     ->store();
 ```
 
-JSON uses pretty printing, preserves Unicode and unescaped slashes, and ends with a newline.
+`json()` accepts an array or a `JsonSerializable` object. It indents the output, keeps Unicode
+and slashes unescaped, and ends the document with a newline.
 
-### Create a CSV document:
+### CSV {#create-a-csv-document}
 
 ```php
 $file = FileMagic::csv([
@@ -69,8 +70,8 @@ Call `resizeImage()` without arguments to use the configured `image.max_width` a
 JPEG, PNG, WebP, and BMP are processed when supported by the active driver. Resizing preserves
 aspect ratio and never enlarges an image. Imagick is preferred when both Imagick and GD are available.
 
-`resizeImage()` is best-effort: non-images, GIF, SVG, unsupported formats, and known decoding
-or encoding failures keep their original bytes. Do not use it to prove an upload is a valid image.
+`resizeImage()` keeps the original bytes for non-images, GIF, SVG, unsupported formats, and known
+decoding or encoding failures. Validate uploads separately when your app requires a valid image.
 
 Width must be positive and quality must be `1` to `100`, even for non-image sources. Processing
 a supported format without Intervention Image or an available driver throws

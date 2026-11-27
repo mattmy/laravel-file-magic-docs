@@ -4,7 +4,7 @@
 
 PHP `ext-zip` must be installed and enabled.
 
-Use the safe generated download name:
+Let FileMagic generate the ZIP filename.
 
 ```php
 return FileMagic::find([
@@ -25,10 +25,10 @@ ZIP entries use the original filename when available. FileMagic strips directory
 cleans unsafe characters, and falls back to the stored name when needed. It keeps query order
 and adds suffixes such as `report (2).pdf` and `report (3).pdf` for duplicate names.
 
-ZIP creation uses local temporary space instead of loading every source into memory.
-`zip.max_files` and `zip.max_size` limit each operation; `zip.max_size` measures the
-uncompressed source bytes. An empty result or any missing or unreadable file fails the download.
-The archive is deleted after the response is sent. It has no `StoredFile` record.
+FileMagic writes ZIP entries and the archive to local temporary storage. `zip.max_files` limits
+the file count, and `zip.max_size` limits the total uncompressed size. FileMagic fails the whole
+download if the result is empty or any file is missing or unreadable. It removes the archive after
+sending the response and creates no `StoredFile` record.
 
 
 ## Delete
@@ -57,9 +57,8 @@ FileMagic keeps it, deletes the confirmed records, and throws `PartialFileDeleti
 `deletedCount()`, `failedCount()`, and `failedKeys()`. Before retrying with a fresh `find()`,
 confirm that the failed records still point to the files you intend to delete.
 
-A batch is not all-or-nothing because storage and the database cannot share one transaction.
-Earlier files may already be deleted when a later file fails. Batch deletion does not create
-backups.
+Storage and the database delete independently. Some files may already be gone when a later file
+fails. Batch deletion creates no backups.
 
 Success returns the number of deleted records; an empty result returns `0`. A database deletion
 failure or affected-row mismatch throws `FileRecordFailed`, even though physical files may

@@ -2,7 +2,7 @@
 
 ## 產生 TXT、JSON 與 CSV 文件
 
-### 產生 UTF-8 TXT 文件：
+### UTF-8 純文字 {#產生-utf-8-txt-文件}
 
 ```php
 $file = FileMagic::text("第一行\n第二行")
@@ -14,7 +14,7 @@ $file = FileMagic::text("第一行\n第二行")
 
 `text()` 會完整保留輸入內容，包括空白與換行。空字串會產生空的 `.txt` 檔案。
 
-### 產生 JSON：
+### JSON {#產生-json}
 
 ```php
 $file = FileMagic::json([
@@ -25,9 +25,9 @@ $file = FileMagic::json([
     ->store();
 ```
 
-輸出會加上縮排及結尾換行，保留原有的 Unicode 字元與斜線。
+`json()` 接受陣列或 `JsonSerializable` 物件。輸出會加上縮排及結尾換行，並保留原有的 Unicode 字元與斜線。
 
-### 產生 CSV 文件：
+### CSV {#產生-csv-文件}
 
 ```php
 $file = FileMagic::csv([
@@ -69,15 +69,15 @@ $file = FileMagic::fromUpload($image)
 
 直接呼叫 `resizeImage()` 會使用設定的 `image.max_width` 和 `image.quality`。
 
-支援 JPEG、PNG、WebP 與 BMP，實際可處理的格式取決於 driver。縮放會維持比例、只縮小不放大；
-同時安裝 Imagick 與 GD 時會優先使用 Imagick。
+支援 JPEG、PNG、WebP 與 BMP，實際可處理的格式取決於圖片驅動程式。縮放會維持比例，且只縮小。
+同時啟用 Imagick 與 GD 時會優先使用 Imagick。
 
-`resizeImage()` 會盡可能處理圖片。非圖片、GIF、SVG、不支援的格式，以及已知的解碼或編碼
-失敗，都會保留原始內容。因此，不能用這個方法驗證上傳內容一定是合法圖片。
+`resizeImage()` 會保留非圖片、GIF、SVG、不支援格式和已知編解碼失敗的原始內容。應用程式若只接受
+有效圖片，請另外驗證上傳內容。
 
 最大寬度必須是正整數，品質必須介於 `1` 至 `100`，即使來源不是圖片也會驗證。
-處理支援格式時若缺少 Intervention Image 或可用的 driver，會拋出
-`ImageProcessingUnavailable`；未預期的系統錯誤也不會被忽略。
+處理支援格式時，若缺少 Intervention Image 或可用的圖片驅動程式，會拋出
+`ImageProcessingUnavailable`。其他未預期的系統錯誤會直接傳出。
 
 FileMagic 會在圖片解碼或縮放前先對原始來源套用 size 與 MIME 限制；輸出有變更時，
 也會在儲存前再次檢查最終內容。原始圖片超過 `maxSize()` 時，即使縮放後可能變小，

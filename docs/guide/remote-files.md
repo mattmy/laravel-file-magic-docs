@@ -2,9 +2,8 @@
 
 ## Store a file from a URL
 
-This optional feature requires PHP `ext-curl`. Without it, `store()` for a remote file throws
-`RemoteDownloadUnavailable`; uploads, local sources, generated documents, and existing-file
-operations remain available. Verify your CLI environment with `php --ri curl`.
+Remote imports require PHP `ext-curl`. If it's missing, `store()` throws `RemoteDownloadUnavailable`
+for remote files. Run `php --ri curl` to check the CLI environment.
 
 `fromUrl()` takes an absolute URL and returns a `PendingFile`. The download starts at `store()`.
 By default, FileMagic requires HTTPS and verifies the certificate.
@@ -23,8 +22,7 @@ $file = FileMagic::fromUrl(
     ->store();
 ```
 
-Use HTTPS, or explicitly allow HTTP for one download. URLs with embedded credentials or fragments
-are rejected.
+FileMagic rejects URLs with embedded credentials or fragments.
 
 Use a hostname to reach an IPv6 server. A URL with a bracketed IPv6 address as its host throws
 `InvalidRemoteUrl`.
@@ -46,8 +44,8 @@ $file = FileMagic::fromUrl(
 )->store();
 ```
 
-When you pass `RemoteFileOptions`, omitted arguments use the constructor defaults below.
-Pass any values you need from your app's `remote` configuration explicitly.
+Omit `RemoteFileOptions` to use your app's `remote` configuration. When you provide options,
+the constructor supplies defaults for any arguments you leave out.
 
 | Option | Type | Default | Behavior |
 | --- | --- | --- | --- |
@@ -85,9 +83,9 @@ private address, list it in `allowedPrivateHosts`. If `allowedHosts` is non-empt
 
 ### TLS verification
 
-TLS verification is enabled by default and FileMagic never silently disables it or
-downgrades HTTPS to HTTP. For a controlled development or internal environment with
-a self-signed certificate, explicitly disable verification:
+FileMagic verifies HTTPS certificates by default. An HTTPS redirect to HTTP requires `allowHttp: true`
+and must pass the usual URL checks. In a controlled development or internal environment, you can
+disable certificate verification explicitly:
 
 ```php
 $file = FileMagic::fromUrl(
@@ -98,7 +96,7 @@ $file = FileMagic::fromUrl(
 
 > **Security warning:** disabling TLS verification permits man-in-the-middle
 > replacement of the downloaded bytes. Do not use it for public or untrusted
-> networks. It does not enable HTTP or disable SSRF protection.
+> networks. HTTP and private-network access still follow their own settings.
 
 To combine disabled TLS verification with other settings, construct the options
 explicitly:
@@ -142,21 +140,16 @@ For the initial URL and each redirect, FileMagic checks the scheme, hostname, po
 IP addresses, then pins the connection to a validated IP. Local, private, reserved, and cloud
 metadata addresses are blocked by default. Use `allowedPrivateHosts` to allow a specific internal host.
 
-Remote response headers and URL filenames are untrusted hints. MIME and extension
-come from the downloaded bytes. `Content-Length` may reject an oversized response
-early, but the actual streamed bytes are always limited by `maxSize()` or the global
-`max_size`.
+FileMagic uses the downloaded bytes to determine MIME type and extension. Response headers
+and filenames are hints. FileMagic can reject a response early based on `Content-Length` and
+enforces `maxSize()` or the global `max_size` while downloading.
 
 The download file and source snapshot can coexist, requiring close to twice the downloaded size
 in local temporary space even without image processing. Images and overwrites add more. The PHP
 worker stays busy throughout `store()`. `timeoutSeconds` applies to each HTTP request; redirects
 start another request, so it is not a deadline for the whole import.
 
-For large or slow imports, call FileMagic from an application queue job; the package does not
-dispatch jobs itself. Configure network egress controls as an additional production boundary.
-
-Stored bytes are not automatically safe. Prefer private visibility, attachment
-downloads, MIME allowlists, `X-Content-Type-Options: nosniff`, and an antivirus or
-content-scanning service for untrusted or high-risk workflows.
+Run large or slow imports in an application queue job. For production network controls and
+handling untrusted content, see [Performance and security](/guide/performance-and-security#security).
 
 

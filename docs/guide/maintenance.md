@@ -36,9 +36,8 @@ To remove database records whose storage objects are confirmed missing:
 php artisan file-magic:audit --delete-missing-records
 ```
 
-Interactive execution asks for confirmation before scanning. Declining exits
-without scanning or changing data. Non-interactive environments must explicitly
-accept the risk:
+In an interactive session, the command asks for confirmation before scanning. Cancelling skips the
+scan and cleanup. For a non-interactive run, pass `--force`:
 
 ```bash
 php artisan file-magic:audit --delete-missing-records --force --no-interaction
@@ -48,9 +47,9 @@ Cleanup reloads initially missing records and checks their storage objects again
 is enabled, both steps run under the path locks. Only an unchanged record whose object is still
 missing is deleted.
 
-A reappeared object is retained as healthy. A record already removed is skipped and does not
-count as deleted. A changed disk, path, or location identity, or an unknown storage state,
-preserves the record and counts as failed.
+If the file reappears, the command keeps the record and counts it as healthy. If the record is
+already gone, the command skips it. If the disk, path, or location identifier changes, or the
+storage state is unknown, the command keeps the record and counts it as failed.
 
 Cleanup does not dispatch each model's Eloquent `deleting` or `deleted` events. Do not use
 cleanup when your application requires those events for each removed record.
@@ -60,16 +59,14 @@ cleanup when your application requires those events for each removed record.
 The audit performs one storage existence check for every selected database record. On S3 and
 other remote disks, these checks can add network latency and billable request charges.
 
-`--chunk` controls database query size and PHP memory use only. It does not
-reduce the number of storage requests. Cleanup adds a second existence check for initially
-missing records whose identity is unchanged. Use `--disk` to limit scope, choose an
-appropriate chunk size, and avoid running the command more often than the
-application needs.
+Use `--chunk` to set the number of records loaded at once, and `--disk` to reduce the number of
+records checked. Cleanup makes a second storage check for records whose files initially appeared
+missing and whose identity still matches.
 
-Read-only results are point-in-time observations, not atomic snapshots shared with storage.
-Lock-enabled cleanup closes the FileMagic store/delete race by revalidating under the shared
-path lock, but direct model deletion, external storage writers, different cache backends, and
-operations that exceed the lease remain outside that guarantee.
+Read-only results describe each file at the time of its check. With path locking enabled, cleanup
+rechecks records under the same locks used by FileMagic stores and batch deletes. The locks cover
+only operations that share the cache backend and finish within the lease. Direct model deletion
+and external storage writes bypass them.
 
 An existence check that throws is reported as `failed`, with exit code `2`. Cleanup keeps the
 affected record.

@@ -8,7 +8,7 @@
 $file = FileMagic::fromUpload($uploadedFile)->store();
 ```
 
-呼叫 `store()` 時，FileMagic 會套用自己的大小上限，並從檔案內容偵測 MIME 類型。
+`store()` 會檢查檔案大小，並從內容偵測 MIME 類型。
 
 
 ## 從其他來源儲存
@@ -23,7 +23,7 @@ $file = FileMagic::fromPath(storage_path('imports/report.pdf'))
     ->store();
 ```
 
-只能傳入由應用程式信任並選擇的路徑。不要直接把使用者提交的任意伺服器路徑傳入 `fromPath()`。
+請將應用程式選定並驗證過的本機路徑傳給 `fromPath()`。
 
 ### 字串或二進位內容
 
@@ -120,10 +120,12 @@ CollisionPolicy::Overwrite;
 - `Error`：目標路徑已存在時拋出 `FileWriteFailed`。
 - `Overwrite`：覆寫既有實體檔案並更新同一筆資料庫紀錄。
 
-`Overwrite` 會先備份舊內容與可見性，再寫入新內容。寫入或儲存紀錄失敗時，會嘗試還原備份。
-這不是原子替換，其他讀取者仍可能在寫入途中存取該路徑。除了新來源的快照，
-還需要接近舊檔案大小的本機備份空間。除非 storage path 必須保持不變，
-否則建議使用預設的 `Unique`。如果取代與還原都失敗，會拋出 `FileRecoveryFailed`。
+覆寫既有紀錄時，省略 `ownedBy()` 或 `withMetadata()` 會保留對應的原值。明確呼叫 `ownedBy($model)`
+會更換 owner，`withMetadata($metadata)` 會取代整份 metadata，`withMetadata([])` 則會清空 metadata。
+
+`Overwrite` 會先備份舊檔案與可見性。寫入檔案或儲存紀錄失敗時，FileMagic 會嘗試還原備份。
+還原也失敗時會拋出 `FileRecoveryFailed`。寫入期間，其他程式仍可讀取該路徑。除了新來源的快照，
+請額外預留約等於舊檔案大小的本機暫存空間。路徑可以變更時，請使用預設的 `Unique`。
 
 路徑鎖定預設關閉。將 `collision_lock.enabled` 設為 `true` 後，FileMagic 會先鎖住候選路徑，
 再檢查檔案是否存在，直到檔案寫入、紀錄儲存與必要的還原或清理都完成才釋放鎖。
@@ -164,10 +166,9 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-單次操作的設定會覆寫對應的全域設定。`maxSize()` 同時限制原始輸入與圖片處理後的
-最終輸出。一般來源使用 `finfo` 偵測內容，不信任瀏覽器提供的 MIME header；內建文件與
-可識別 MIME 的 `fromGeneratedContent()` 則使用宣告的可信任 MIME。封鎖清單優先於允許清單；
-允許清單為空時不額外限制類型。
+這些選項會在本次操作覆寫對應的全域預設值。`maxSize()` 同時限制原始輸入及圖片處理後的輸出。一般來源由
+`finfo` 從內容偵測 MIME 類型。套件產生的文件，以及 `fromGeneratedContent()` 提供可識別類型的
+內容，會使用宣告的 MIME 類型。封鎖清單優先於允許清單，允許清單為空時只套用封鎖規則。
 
 
 ## 附加 metadata
@@ -223,9 +224,8 @@ $attachment = $post->files->firstOrFail();
 return FileMagic::find($attachment)->download();
 ```
 
-將既有的 `StoredFile` Model 傳給 `find()` 時，會執行一筆套用 scope 的查詢以取得目前的
-紀錄。預先載入可一次取得附件，但不會省略這筆查詢；傳入 Model 的其他屬性與已載入關聯
-不會被沿用。若已設定自訂檔案 Model，反向關聯也應使用該類別。
+`find()` 只使用傳入 Model 的主鍵，並套用全域範圍來查詢目前的紀錄。即使附件已預先載入，
+這筆查詢仍會執行。反向關聯請使用設定的檔案 Model 類別。
 
 `owner_id` 使用字串欄位，因此可支援整數、UUID 與 ULID 主鍵。
 

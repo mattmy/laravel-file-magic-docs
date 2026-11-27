@@ -35,10 +35,9 @@ composer require intervention/image:^4.0
 
 ## Configuration
 
-FileMagic works with its defaults after the migration is published and run. By default, it stores
-private files in the `files` directory on `FILE_MAGIC_DISK` (falling back to `FILESYSTEM_DISK`,
-then `local`), limits files to 100 MiB, and gives
-colliding filenames a unique suffix.
+After migrating, you can store files with the defaults. FileMagic stores files privately in `files`
+on the disk configured by `FILE_MAGIC_DISK`, falling back to `FILESYSTEM_DISK` and then `local`.
+The size limit is 100 MiB. If the path already exists, FileMagic adds a unique suffix.
 
 Publish the configuration only when you need to change these defaults:
 

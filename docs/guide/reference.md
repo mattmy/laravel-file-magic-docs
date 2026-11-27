@@ -27,8 +27,8 @@ FileMagic::csv(iterable $rows): PendingFile
 - `fromUrl()` prepares an HTTP(S) source and downloads it at `store()`. `$options` changes its rules.
 - `text()`, `json()`, and `csv()` create content that can be stored like any other file.
 
-All methods return `PendingFile`. See [Storing files](/guide/storing-files),
-[Remote files](/guide/remote-files), and [Documents and images](/guide/documents-and-images).
+See [Storing files](/guide/storing-files), [Remote files](/guide/remote-files), and
+[Documents and images](/guide/documents-and-images) for examples.
 
 ## Configure and store a pending file
 
@@ -58,7 +58,9 @@ $pending->store(): StoredFile
 - `allowMimeTypes()` accepts only the listed MIME types; an empty list adds no restriction. Entries must be non-empty strings.
 - `blockMimeTypes()` rejects the supplied non-empty strings in a list; the list itself may be empty.
 - `withMetadata()` saves application data in the file record's `metadata` field.
+  On overwrite, it replaces the entire field. Omit it to keep the current metadata or pass `[]` to clear it.
 - `ownedBy()` associates a persisted Eloquent model with an integer or non-empty string key, or throws `InvalidFileOwner`.
+  Omit it on overwrite to keep the current owner.
 - `resizeImage()` sets the maximum width and output quality for supported images. A `null`
   parameter uses its configured default; width must be positive and quality must be `1` to `100`.
 - `store()` saves the physical file and returns its `StoredFile` record.
@@ -66,11 +68,11 @@ $pending->store(): StoredFile
 ## Find files
 
 ```php
-FileMagic::find(int|string|StoredFile|array|Collection ...$targets): FileQuery
+FileMagic::find(mixed ...$targets): FileQuery
 ```
 
-`$targets` accepts IDs, UUIDs, existing `StoredFile` models, one-dimensional arrays, and
-Laravel Collections. Multiple target arguments may be mixed. See
+Pass IDs, decimal ID strings, UUIDs, or saved `StoredFile` models. You can mix these in individual
+arguments, one-dimensional arrays, and Laravel Collections. FileMagic skips invalid scalar values. See
 [Querying files](/guide/querying-files).
 
 ```php
@@ -95,7 +97,8 @@ $query->delete(): int
 - `temporaryUrl()` returns a temporary URL. A `null` expiration uses the configured lifetime.
 - `contents()` returns the complete contents of the first matching file as a string.
 - `readStream()` returns a readable stream for the first matching file; close it after use.
-- `download()` returns a streamed download. `$name` replaces the download filename.
+- `download()` streams the file using `$name` if supplied. The default is the cleaned original filename,
+  with the stored filename as a fallback.
 - `downloadZip()` returns all matching files as a ZIP download. `$name` sets the ZIP filename.
 - `delete()` deletes matching physical files and records, then returns the deleted count.
 
@@ -112,7 +115,7 @@ With no matches, `one()` returns `null`, `get()` and `urls()` return empty colle
 | `id` | `int` | Database key. |
 | `uuid` | `string` | Public unique identifier. |
 | `disk` | `string` | Laravel Filesystem disk. |
-| `path` | `string` | Full path relative to the disk. |
+| `path` | `string` | Path relative to the disk root. |
 | `location_hash` | `string` | Identifier for the disk and path combination. |
 | `filename` | `string` | Base name before FileMagic appends the extension. |
 | `original_filename` | `?string` | Original filename when available. |

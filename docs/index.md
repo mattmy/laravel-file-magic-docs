@@ -35,6 +35,3 @@ need PHP `ext-zip`.
 ```bash
 composer require mattmy/laravel-file-magic
 ```
-
-Start with the [complete documentation](/guide/getting-started) or review the
-[source repository](https://github.com/mattmy/laravel-file-magic).

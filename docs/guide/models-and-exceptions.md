@@ -21,9 +21,9 @@ final class StoredFile extends BaseStoredFile
 The custom model must extend the package `StoredFile` and set `$table` to match `file-magic.table`.
 Storage, lookup, batch deletion, and audits use its connection, table, and primary key.
 
-`find()` applies global scopes. Batch deletion reloads and deletes only the resolved primary keys
-using unscoped queries; it does not expand the selection or dispatch individual `deleting` or
-`deleted` events. Audits bypass global scopes; see [Consistency audits](/guide/maintenance).
+`find()` applies global scopes. Batch deletion rechecks only the selected primary keys in a query
+without global scopes or eager loads. It deletes records in batches and skips individual `deleting`
+and `deleted` events. Audits also bypass global scopes. See [Consistency audits](/guide/maintenance).
 
 If you need individual model events, explicitly retrieve the model and call `$file->delete()`.
 That path does not use shared path locks or compensate if the physical deletion succeeds but
@@ -48,9 +48,9 @@ Some read, URL, and storage operations can also throw exceptions from the storag
 | `RemoteDownloadUnavailable` | PHP `ext-curl` is unavailable for `fromUrl()` |
 | `RemoteDownloadFailed` | DNS, TLS, connection, redirect, HTTP, or temporary download failure |
 | `InvalidFileName` | Unsafe or reserved name |
-| `InvalidStoragePath` | Unsafe directory |
+| `InvalidStoragePath` | Invalid directory supplied to `inDirectory()` |
 | `InvalidFileOwner` | Owner is not persisted or has no integer or non-empty string key |
-| `InvalidFileTarget` | Invalid ID, UUID, model, array, or Collection target |
+| `InvalidFileTarget` | Invalid model target, nested target container, or unsupported target type |
 | `InvalidStoredFileModel` | Configured model does not extend the package `StoredFile` or uses a different table |
 | `FileTooLarge` | Byte limit exceeded |
 | `DisallowedMimeType` | MIME type rejected |

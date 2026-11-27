@@ -8,7 +8,7 @@ Pass a Laravel `UploadedFile` to `fromUpload()`.
 $file = FileMagic::fromUpload($uploadedFile)->store();
 ```
 
-When you call `store()`, FileMagic applies its own size limit and detects the MIME type from the contents.
+`store()` checks the file size and detects the MIME type from its contents.
 
 
 ## Store from other sources
@@ -115,11 +115,14 @@ Collision policies:
 - `Error` throws `FileWriteFailed`.
 - `Overwrite` intentionally replaces the physical path and updates its existing database record.
 
-`Overwrite` backs up the existing bytes and visibility before writing. If writing or saving the
-record fails, FileMagic attempts to restore that backup. This is not an atomic replacement, so
-other readers can observe the path while it is being written. The backup needs local temporary
-space close to the old file size, in addition to the new source snapshot. Prefer the default
-`Unique` policy unless the storage path must stay the same. If both replacement and recovery fail, `FileRecoveryFailed` is thrown.
+When overwriting a record, omit `ownedBy()` and `withMetadata()` to keep their existing values.
+An explicit `ownedBy($model)` replaces the owner, and `withMetadata($metadata)` replaces all metadata.
+Pass `withMetadata([])` to clear it.
+
+`Overwrite` backs up the old file and its visibility before writing. If the write or record save
+fails, FileMagic tries to restore the backup. If recovery also fails, it throws `FileRecoveryFailed`.
+Readers can still access the path while FileMagic writes to it. Allow extra local temporary space
+roughly equal to the size of the old file. Use `Unique` when the path can change.
 
 Path locking is off by default. Set `collision_lock.enabled` to `true` to lock each candidate path
 from the existence check through writing, saving the record, and any recovery. If the wait exceeds
@@ -145,11 +148,11 @@ $file = FileMagic::fromUpload($uploadedFile)
     ->store();
 ```
 
-Per-operation values override their corresponding global configuration. `maxSize()` applies to
-both the original input and the final image output. FileMagic uses `finfo`, not the
-browser-provided MIME header, for ordinary sources. Built-in documents and recognized
-`fromGeneratedContent()` MIME types use their declared trusted MIME instead. The blocklist wins
-when a type appears in both lists; an empty allowlist adds no restriction.
+These options replace the corresponding defaults for this file. `maxSize()` applies to both the
+original input and the processed image. FileMagic detects the MIME type of ordinary sources with
+`finfo`. Built-in documents and `fromGeneratedContent()` with a recognized MIME type use the
+declared type. The blocklist wins when a type appears in both lists. An empty allowlist permits
+any type the blocklist allows.
 
 
 ## Metadata and ownership
@@ -180,8 +183,7 @@ public function files(): MorphMany
 }
 ```
 
-Eager-load the relation from the owning model, then pass an already loaded file
-model into FileMagic:
+Load the files with the owner, then pass an attachment to `find()`.
 
 ```php
 $post = Post::query()
@@ -193,10 +195,9 @@ $attachment = $post->files->firstOrFail();
 return FileMagic::find($attachment)->download();
 ```
 
-Passing an existing `StoredFile` model to `find()` performs one scoped query to obtain the current
-canonical record. Eager loading fetches the attachments together but does not remove this
-lookup. The supplied model only identifies the record; its other attributes and loaded
-relations are not reused. If you configured a custom file model, use that class in the inverse relation.
+`find()` uses the supplied model's primary key to query the current record with its global scopes.
+It performs this lookup even when the attachment was eager loaded. Use your configured file model
+class in the inverse relationship.
 
 The `owner_id` column is a string, so integer, UUID, and ULID owner keys are supported.
 

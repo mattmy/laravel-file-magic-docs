@@ -2,12 +2,10 @@
 
 ## Performance
 
-Each `store()` attempt reads the original source once into a bounded local snapshot. Inspection,
-image processing, and writing use those captured bytes, avoiding source changes after inspection.
-Even a local source needs this extra temporary space.
-
-Allow room for files that can coexist with the source snapshot, including decoded Base64,
-remote downloads, processed images, and overwrite backups.
+Each `store()` attempt reads the source once into a size-limited local snapshot. FileMagic uses
+those bytes for inspection, image processing, and storage. Budget temporary space for the snapshot
+even with local sources, plus any decoded Base64, downloads, processed images, and overwrite backups
+that may exist at the same time.
 
 - `contents()` loads the complete file into memory. Use `readStream()` for large files and
   close the returned stream after use.

@@ -2,11 +2,8 @@
 
 ## 效能
 
-每次 `store()` 都會將原始來源讀取一次，建立有大小上限的本機快照；內容檢查、圖片處理與
-寫入都使用這份資料，避免檢查後來源被替換。即使來源已在本機，也需要這份額外暫存空間。
-
-估算暫存空間時，請把可能與來源快照同時存在的檔案算進去，包括 Base64 解碼、遠端下載、
-圖片處理結果及覆寫備份。
+每次 `store()` 都會讀取來源一次，建立有大小上限的本機快照。內容檢查、圖片處理與儲存都使用這份快照。
+本機來源也需要快照空間。估算時請加上可能同時存在的 Base64 解碼檔、下載檔、處理後的圖片和覆寫備份。
 
 - `contents()` 會把完整檔案放入記憶體。大型檔案請使用 `readStream()`，並在使用後
   關閉回傳的 stream。
@@ -18,7 +15,7 @@
   請使用應用程式接受的最大圖片尺寸測試。
 - `Overwrite` 需要接近現有檔案大小的本機暫存空間，耗時也高於一般儲存。除非 path
   必須保持不變，否則請優先使用 `Unique`。
-- 啟用 collision lock 時，儲存、批次刪除與稽核清理都會等待 canonical disk/path locks。
+- 啟用路徑鎖定時，儲存、批次刪除與稽核清理都會依磁碟與路徑取得鎖。
   N 個路徑的等待時間可能接近 `N × collision_lock.wait_seconds`。鎖不會自動續期，
   有效期限必須涵蓋取得所有鎖與完成整次操作的時間，並應監控等待逾時。
 - ZIP 下載需要容納來源資料與 ZIP archive 的暫存空間，請設定合適的
@@ -42,10 +39,10 @@
 - 只有應用程式自行產生內容且能確認格式時，才應透過 `fromGeneratedContent()` 指定可信任的 MIME 類型。
   上傳檔案、HTTP 回應、Data URI 等不可信任內容，請用對應的來源方法，讓 `finfo` 檢查內容。
   傳給 `fromPath()` 的路徑應先由應用程式確認。
-- 高敏感度流程請優先使用 MIME allowlist。同源提供檔案時，應考慮封鎖 HTML 與 SVG。
-- 敏感檔案請使用 private disk 與短效 temporary URL。
-- 除了 FileMagic 的 `max_size`，也要設定 Web Server 與 PHP request limits。
-- 應用程式風險模型需要時，請加入 antivirus 或 content scanning。
+- 處理敏感資料時，優先使用 MIME 允許清單。與應用程式同源提供檔案時，可封鎖 HTML 與 SVG。
+- 將敏感檔案存到私人磁碟，並使用短效的暫時網址。
+- 除了 FileMagic 的 `max_size`，也要設定網頁伺服器與 PHP 的請求大小上限。
+- 依應用程式的風險評估加入防毒或內容掃描。
 - 遠端匯入預設驗證 TLS 並封鎖 private network targets。正式環境請保留這些預設，
   並使用 outbound firewall 增加另一層限制。
 - 除非能安全隔離，下載的 HTML 與其他 active content 應保持 private。不可信任檔案

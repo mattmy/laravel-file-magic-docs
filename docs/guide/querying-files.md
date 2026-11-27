@@ -2,7 +2,7 @@
 
 ## Query files
 
-Pass a positive integer ID, UUID, or saved `StoredFile` model to `find()`.
+Pass a positive integer ID, a decimal ID string such as `'123'`, a UUID, or a saved `StoredFile` model to `find()`.
 
 ```php
 $file = FileMagic::find($id)->one();
@@ -43,13 +43,15 @@ $collection = FileMagic::find(collect([
 `FileQuery` resolves targets on first use and reuses the results. It runs at most one query for the
 file records, applies the configured model's global scopes, keeps input order, and removes duplicates.
 Eloquent can run additional queries for eager-loaded relationships. A supplied model contributes
-only its primary key. An empty target list runs no query.
+only its primary key. If no valid targets remain, FileMagic skips the query.
 
-Arrays and Collections must be one-dimensional. Every element must be a positive integer ID, valid UUID, or persisted `StoredFile`; invalid elements throw `InvalidFileTarget` instead of being silently removed.
+`find()` skips `null`, booleans, floats, non-positive integers, and strings that match neither a UUID
+nor a positive decimal ID. This applies to individual arguments and values in arrays or Collections.
+Decimal IDs use ASCII digits, allow leading zeros, and must fit in a PHP integer. UUIDs are case-insensitive.
 
-UUIDs are case-insensitive. Numeric strings such as `"123"` are not integer IDs; convert and
-validate request values before passing them. A model target must match the configured file model,
-connection, table, and primary-key name, and its primary key must not be dirty.
+Nested arrays or Collections, unsupported types, and invalid models throw `InvalidFileTarget`. A model
+target must be saved and match the configured file model, connection, table, and primary-key name.
+Its primary key must match the saved value.
 
 Valid IDs and UUIDs without a matching record are omitted. `one()` therefore returns
 the first resolved `StoredFile` or `null`, while operations that require a file,
@@ -104,7 +106,7 @@ try {
     while (\feof($stream) === false) {
         $chunk = \fread($stream, 8192);
 
-        if ($chunk === false) {
+        if ($chunk === false || ($chunk === '' && \feof($stream) === false)) {
             throw new \RuntimeException('The file stream could not be read.');
         }
 
@@ -126,7 +128,8 @@ $response = FileMagic::find($target)->download();
 $renamedResponse = FileMagic::find($target)->download('invoice-2026.pdf');
 ```
 
-Laravel streams the response using the record's MIME type: detected from ordinary content, or
-declared by a trusted generated source. Changing the download name does not convert the content.
+`download()` uses the cleaned original filename when available and the stored filename as a fallback.
+Laravel streams the file with the MIME type saved on the record. Passing a name changes only the filename
+shown in the download.
 
 

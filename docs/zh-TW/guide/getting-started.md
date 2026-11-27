@@ -27,7 +27,7 @@ Laravel Filesystem 磁碟與資料庫連線。
 composer require mattmy/laravel-file-magic
 ```
 
-發佈並執行 migration：
+發布並執行 migration。
 
 ```bash
 php artisan vendor:publish --tag=file-magic-migrations
@@ -42,12 +42,10 @@ composer require intervention/image:^4.0
 
 ## 設定
 
-發佈並執行 migration 後，FileMagic 可以直接使用預設設定。預設會在
-`FILE_MAGIC_DISK` 指定的 disk 下，以 `files` 為目錄、`private` 為可見性，
-限制檔案大小為 100 MiB，檔名重複時會加入隨機字串。未設定 `FILE_MAGIC_DISK` 時，
-依序使用 `FILESYSTEM_DISK` 或 `local`。
+執行 migration 後，即可用預設設定儲存檔案。FileMagic 會以私人可見性存到 `files` 目錄，磁碟依序使用
+`FILE_MAGIC_DISK`、`FILESYSTEM_DISK`、`local`。檔案上限為 100 MiB，路徑重複時會加上隨機字串。
 
-只有需要調整預設值時才需發佈設定檔：
+要調整預設值，再發布設定檔。
 
 ```bash
 php artisan vendor:publish --tag=file-magic-config

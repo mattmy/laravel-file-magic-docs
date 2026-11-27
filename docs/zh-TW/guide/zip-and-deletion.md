@@ -4,7 +4,7 @@
 
 必須先安裝並啟用 PHP `ext-zip`。
 
-使用安全的自動產生下載名稱：
+讓 FileMagic 自動產生 ZIP 檔名。
 
 ```php
 return FileMagic::find([
@@ -25,10 +25,9 @@ return FileMagic::find($targets)->downloadZip('project-documents');
 必要時改用儲存檔名。檔案依查詢順序加入，名稱重複時會加上序號，例如 `report (2).pdf`、
 `report (3).pdf`。
 
-ZIP 使用本機暫存空間，不會把所有來源內容同時載入記憶體。每次操作受到
-`zip.max_files` 與 `zip.max_size` 限制。`zip.max_size` 以來源檔案未壓縮的總位元組數計算。
-查詢結果為空，或有檔案遺失、無法讀取時，整次下載會失敗。ZIP 會在送出回應後刪除，
-也不會新增 `StoredFile` 紀錄。
+FileMagic 會將來源檔案與 ZIP 寫入本機暫存空間。`zip.max_files` 限制檔案數量，`zip.max_size`
+限制未壓縮的總大小。查無結果，或有檔案遺失、無法讀取時，整批下載會失敗。回應送出後會刪除 ZIP，
+整個過程不會新增 `StoredFile` 紀錄。
 
 
 ## 刪除檔案

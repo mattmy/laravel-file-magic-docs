@@ -40,9 +40,10 @@ The blocklist takes priority over the allowlist. Omitting `blocked_mime_types` k
 blocklist; setting it to `[]` explicitly disables it. `allowMimeTypes()` and `blockMimeTypes()`
 replace their corresponding global lists rather than merging with them.
 
-Use PHP integers for numeric settings, lists with consecutive keys starting at zero, and the enum
-values in the table. Disk names must exist in `filesystems.disks`. FileMagic generally validates
-options when the feature uses them. Invalid values generally throw `InvalidConfiguration`.
+Use PHP integers for numeric settings, zero-indexed lists with consecutive keys, and the values
+shown in the table. Configure disk names in `filesystems.disks`. FileMagic checks most settings
+when the feature uses them. An invalid default `directory` throws `InvalidConfiguration`.
+An invalid directory passed to `inDirectory()` throws `InvalidStoragePath`.
 
 To rename a table after deployment, create a new migration and update `table` to match. See [Models and exceptions](/guide/models-and-exceptions)
 when replacing `model` or `table`.
@@ -58,14 +59,13 @@ before mutation. Use a Laravel cache store that supports atomic locks: Redis, Me
 DynamoDB, database, file, or array. A missing or unsupported lock store is rejected. Disabled
 mode does not resolve or validate `store`, `lease_seconds`, or `wait_seconds`.
 
-All lock-enabled application processes that write the same storage paths must use the same shared cache
-backend. The array store is suitable only for single-process tests. The file store coordinates
-multiple servers only when they truly share the same filesystem. Set `lease_seconds` longer
-than the worst-case multi-lock wait, storage I/O, reconciliation, database mutation, and recovery
-time. Store lock timeout throws `FileWriteFailed`; batch deletion reports `PartialFileDeletion`,
-and audit cleanup exits with code `2`. FileMagic validates enabled lock settings when it initializes
-the lock service. Invalid settings throw `InvalidConfiguration` and can prevent a lookup or read-only
-audit from starting.
+Use the same cache backend in every process that coordinates access to the same paths. Use the array
+store only for single-process tests. The file store can coordinate servers that share a filesystem.
+Set `lease_seconds` to cover lock acquisition, storage I/O, database changes, and any recovery.
+
+On timeout, `store()` throws `FileWriteFailed`, batch deletion throws `PartialFileDeletion`, and audit
+cleanup exits with code `2`. FileMagic validates enabled lock settings when it initializes the lock
+service. An `InvalidConfiguration` error at that point can also prevent a lookup or read-only audit.
 
 Each distinct path needs its own lock. For N paths, the worst-case acquisition wait can approach
 `N × collision_lock.wait_seconds`. Leases are not automatically extended. See
@@ -81,5 +81,4 @@ FILE_MAGIC_DIRECTORY=uploads
 FILE_MAGIC_VISIBILITY=private
 ```
 
-`FILE_MAGIC_DISK` falls back to Laravel's `FILESYSTEM_DISK`, then `local`. Other options can be changed in the
-published `config/file-magic.php` file.
+Change other options in the published `config/file-magic.php`.
